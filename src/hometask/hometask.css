@@ -1,0 +1,314 @@
+/* =========================================================
+   Minihra „Poslední cesta Eleanor“ – mahagonový stůl
+   Responzivní: na šířku (PC, tablet) předměty vedle sebe,
+   na výšku (mobil) pod sebou se svislým posunem.
+   ========================================================= */
+.ht{position:fixed;inset:0;overflow:hidden;background:#1a0c07;color:#efe3c6;font-family:'IBM Plex Sans',sans-serif;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.ht *{box-sizing:border-box}
+.ht button{font:inherit;cursor:pointer}
+.ht .ht-obj{color:inherit}
+.ht button:disabled{cursor:not-allowed}
+.ht :focus-visible{outline:3px solid #ffe9a6;outline-offset:3px}
+.ht img{display:block;max-width:none}
+.ht .ht-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* stůl, světlo lampy, vinětace */
+.ht-table{position:absolute;inset:0;background:url("../assets/ht/table.webp") center/cover no-repeat #2a130b}
+.ht-lamplight{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 60% at 18% 12%,rgba(255,196,120,.30),rgba(255,160,80,.08) 45%,transparent 70%);mix-blend-mode:screen}
+.ht-vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 95% 85% at 45% 40%,transparent 45%,rgba(0,0,0,.62) 100%)}
+
+/* společné prvky */
+.ht-kicker{font:400 11px 'IBM Plex Sans',sans-serif;letter-spacing:.32em;color:#d9b96d;}
+.ht-tagbtn{display:inline-block;background:#f4d84a;color:#2a210a;font:400 14px 'IBM Plex Sans',sans-serif;padding:10px 26px 10px 16px;border:0;transform:rotate(-1.2deg);box-shadow:0 4px 10px rgba(0,0,0,.5);clip-path:polygon(0 0,94% 0,100% 50%,94% 100%,0 100%)}
+.ht-tagbtn.small{font-size:12px;padding:8px 22px 8px 12px}
+.ht-tagbtn.alt{background:#efe8d4}
+.ht-tagbtn:disabled{background:#8d8467;color:#4b4535;opacity:.75}
+.ht-linkbtn{background:none;border:0;color:#cdb98b;font:400 12px 'IBM Plex Sans',sans-serif;text-decoration:underline;padding:6px}
+.ht-exit,.ht-hintbtn{font:400 12px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;color:#2a1f08;background:linear-gradient(180deg,#e7c877,#a8842f);border:0;padding:9px 13px;border-radius:3px;box-shadow:0 3px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.45);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.ht-ico{display:inline-block;width:15px;height:15px}.ht-ico svg{width:100%;height:100%}
+.ht-iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 30%,#efd48a,#9a7629 72%);box-shadow:0 3px 8px rgba(0,0,0,.6);color:#2a1f08;display:grid;place-items:center}
+.ht-iconbtn svg{width:19px;height:19px}
+.ht-handnote{font:italic 500 clamp(18px,2.4vh,24px)/1.2 'Cormorant Garamond',serif;color:#f6dfa4;text-shadow:0 2px 6px #000;text-align:center;margin:0}
+.ht-fadein{animation:ht-fade .8s ease both}
+@keyframes ht-fade{from{opacity:0}to{opacity:1}}
+
+/* horní lišta */
+.ht-top{position:absolute;left:0;right:0;top:0;height:72px;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:0 18px;gap:12px;background:linear-gradient(180deg,rgba(14,6,3,.75),rgba(14,6,3,0))}
+.ht-title{text-align:center;flex:1;min-width:0}
+.ht-title h1{margin:2px 0 3px;font:600 clamp(22px,3vw,32px)/1 'Cormorant Garamond',serif;letter-spacing:.04em;color:#f6e6b8;text-shadow:0 2px 10px rgba(0,0,0,.7)}
+.ht-pips{display:inline-flex;gap:7px}
+.ht-pips i{width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e8cd84,#8a6a26);opacity:.28;box-shadow:0 1px 3px #000}
+.ht-pips i.on{opacity:1}
+.ht-topr{display:flex;gap:10px;align-items:center}
+
+/* ---------- STŮL: na šířku ---------- */
+.ht-desk{position:absolute;inset:72px 0 0 0;display:grid;grid-template-columns:1fr .95fr 1.3fr;grid-template-rows:1fr 1fr;grid-template-areas:"letter photo docs" "wheel photo docs";gap:2.4vmin 3vmin;padding:1vmin 4vmin 4vmin;align-items:center;justify-items:center}
+.ht-obj{position:relative;background:none;border:0;padding:0;transition:transform .25s ease,filter .25s ease;filter:drop-shadow(0 14px 18px rgba(0,0,0,.65))}
+.ht-obj:hover{transform:translateY(-3px) scale(1.02);filter:drop-shadow(0 20px 22px rgba(0,0,0,.7))}
+.ht-plate{position:absolute;left:50%;bottom:-6px;transform:translate(-50%,100%) rotate(-1.5deg);font:400 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.22em;color:#2a1f08;background:linear-gradient(180deg,#e2c272,#a98532);padding:4px 10px;border-radius:2px;box-shadow:0 2px 6px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.4);white-space:nowrap}
+.ht-check{position:absolute;right:-10px;top:-10px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#86d493,#2a6637);border:2px solid #d8f3dc;color:#fff;display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.6)}
+.ht-check svg{width:16px;height:16px}
+.ht-nudge{animation:ht-pulse 1.8s ease-in-out infinite}
+@keyframes ht-pulse{0%,100%{filter:drop-shadow(0 14px 18px rgba(0,0,0,.65))}50%{filter:drop-shadow(0 0 22px rgba(255,226,140,.95))}}
+
+.ht-o-letter{grid-area:letter;width:min(100%,58vh);transform:rotate(-3deg)}
+.ht-o-letter:hover{transform:rotate(-3deg) translateY(-3px) scale(1.02)}
+.ht-envwrap{position:relative;display:block}
+.ht-envwrap>img{width:100%;height:auto}
+.ht-envwrap>img.ht-envseal{position:absolute;left:50%;top:56%;width:17%;height:auto;transform:translate(-50%,-50%) rotate(-8deg)}
+.ht-envaddr{position:absolute;left:0;right:0;bottom:12%;text-align:center;font:italic 500 clamp(14px,2.1vh,22px) 'Cormorant Garamond',serif;color:#2b1d14;transform:rotate(1deg)}
+
+.ht-o-photo{grid-area:photo;height:min(100%,72vh);aspect-ratio:1086/1448;transform:rotate(-2.5deg)}
+.ht-o-photo:hover{transform:rotate(-2.5deg) translateY(-3px) scale(1.02)}
+.ht-printframe{display:block;height:100%;background:#efe5cc;padding:3.2%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.ht-printframe img{width:100%;height:100%;object-fit:cover}
+
+.ht-o-docs{grid-area:docs;position:relative;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2.2vmin}
+.ht-doc{transform:rotate(var(--tilt))}
+.ht-doc:hover{transform:rotate(var(--tilt)) translateY(-3px) scale(1.02)}
+.ht-doc img{width:100%;height:auto}
+.ht-doc-ticket{width:min(100%,92vh)}
+.ht-doc-ticket:nth-child(odd){width:min(96%,88vh)}
+.ht-doc-booklet{width:min(30%,24vh)}
+.ht-designated{position:absolute;right:6%;top:50%;transform:translateY(-50%) rotate(-12deg);font:400 clamp(11px,1.6vh,15px) 'IBM Plex Sans',sans-serif;letter-spacing:.1em;color:#a8342a;border:2px solid #a8342a;padding:3px 7px;background:rgba(244,236,216,.6);border-radius:2px}
+.ht-plate-docs{bottom:-2px}
+.ht-o-docs>.ht-check{right:2%;top:2%}
+
+.ht-o-wheel{grid-area:wheel;height:min(100%,40vh);aspect-ratio:1}
+.ht-o-wheel .ht-wheel{width:100%;height:100%}
+
+.ht-decor{position:absolute;pointer-events:none;filter:drop-shadow(0 18px 22px rgba(0,0,0,.6))}
+.ht-decor-lamp{left:-4vh;top:-6vh;height:46vh;width:auto;transform:rotate(8deg);opacity:.95;z-index:0}
+.ht-decor-postcard{left:20vw;bottom:-10vh;height:26vh;width:auto;transform:rotate(9deg);opacity:.85}
+.ht-decor-tag{right:-3vh;bottom:-5vh;height:22vh;width:auto;transform:rotate(-18deg);opacity:.9}
+.ht-desk>.ht-obj,.ht-o-docs{z-index:1}
+
+/* ---------- STŮL: na výšku (mobil) ---------- */
+@media (max-aspect-ratio: 1/1){
+  .ht-top{height:64px;padding:0 10px}
+  .ht-title h1{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ht-title .ht-kicker{display:none}
+  .ht-hintbtn{padding:8px 9px;font-size:11px}
+  .ht-top .ht-hintbtn{font-size:0;gap:0;padding:10px}
+  .ht-top .ht-hintbtn .ht-ico{width:17px;height:17px}
+  .ht-exit{padding:8px 9px;font-size:11px}
+  .ht-desk{inset:64px 0 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;grid-template-areas:"letter photo" "wheel photo" "docs docs";gap:44px 18px;padding:18px 18px 80px;align-content:start}
+  .ht-o-letter{width:100%}
+  .ht-o-photo{height:auto;width:100%}
+  .ht-o-wheel{height:auto;width:88%}
+  .ht-o-docs{height:auto;gap:22px;padding:8px 0 30px}
+  .ht-doc-ticket,.ht-doc-ticket:nth-child(odd){width:100%}
+  .ht-doc-booklet{width:44%}
+  .ht-decor-lamp{display:none}
+  .ht-decor-postcard{display:none}
+  .ht-decor-tag{display:none}
+}
+
+/* ---------- DETAIL PŘEDMĚTU ---------- */
+.ht-detail{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;background:rgba(10,5,2,.82);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:ht-fade .3s ease both}
+.ht-dhead{flex:none;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:10px}
+.ht-dbody{flex:1;min-height:0;display:flex;padding:6px 3vw 10px}
+.ht-stagebox{flex:1;min-width:0;min-height:0;position:relative;container-type:size;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.ht-fit{width:min(100cqw,calc((100cqh - 54px) * var(--r)));aspect-ratio:var(--r);position:relative;flex:none}
+.ht-under{max-width:min(90%,640px)}
+.ht-tools{flex:none;display:flex;justify-content:center;gap:clamp(14px,3vw,34px);padding:6px 12px 18px;flex-wrap:wrap}
+.ht-round{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;font:400 10px 'IBM Plex Sans',sans-serif;letter-spacing:.12em;color:#e2cd96}
+.ht-round>svg{width:52px;height:52px;padding:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#efd48a,#9a7629 72%);color:#2a1f08;box-shadow:0 5px 12px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.5)}
+.ht-round.is-on>svg{background:radial-gradient(circle at 35% 30%,#fff1b5,#d9a52f 72%);box-shadow:0 0 18px rgba(255,220,120,.8),0 5px 12px rgba(0,0,0,.7)}
+.ht-round:disabled{opacity:.38}
+.ht-stepper .ht-round{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#efd48a,#9a7629 72%);color:#2a1f08;font:400 26px 'IBM Plex Sans',sans-serif;display:grid;place-items:center;box-shadow:0 5px 12px rgba(0,0,0,.7)}
+
+/* dopis */
+.ht-bigenv{position:relative;width:min(92cqw,calc(70cqh * 447 / 244));filter:drop-shadow(0 26px 34px rgba(0,0,0,.75));transition:transform .9s ease .35s,opacity .9s ease .35s}
+.ht-bigenv>img{width:100%;height:auto}
+.ht-bigenv .ht-envaddr{font-size:clamp(18px,3.2cqw,30px)}
+.ht-bigenv.breaking{transform:translateY(14%) scale(.94);opacity:.0}
+.ht-bigseal{position:absolute;left:50%;top:54%;width:19%;aspect-ratio:1;transform:translate(-50%,-50%);background:none;border:0;padding:0;touch-action:pan-y;cursor:grab}
+.ht-bigseal .h{position:absolute;inset:0;width:100%;height:100%;transition:transform .7s cubic-bezier(.3,.9,.4,1),opacity .7s}
+.ht-bigseal .h.l{clip-path:polygon(0 0,54% 0,46% 40%,56% 62%,48% 100%,0 100%)}
+.ht-bigseal .h.r{clip-path:polygon(54% 0,100% 0,100% 100%,48% 100%,56% 62%,46% 40%)}
+.ht-bigenv.breaking .h.l{transform:translate(-40%,28%) rotate(-28deg)}
+.ht-bigenv.breaking .h.r{transform:translate(42%,36%) rotate(24deg)}
+.ht-letter{width:min(94cqw,calc(96cqh * .74));max-height:96cqh;overflow-y:auto;padding:clamp(22px,5cqw,52px) clamp(22px,5cqw,56px);background:url("../assets/ht/letter_paper.webp") center/cover #e6d6b2;color:#22180f;box-shadow:0 26px 44px rgba(0,0,0,.75);transform:rotate(-.7deg);animation:ht-rise .7s ease both;user-select:text;-webkit-user-select:text}
+@keyframes ht-rise{from{opacity:0;transform:translateY(30px) rotate(-.7deg)}to{opacity:1;transform:rotate(-.7deg)}}
+.ht-letter p{font:italic 500 clamp(19px,2.9vh,28px)/1.28 'Cormorant Garamond',serif;margin:0 0 .55em}
+.ht-letter .ht-l-date{text-align:right;font-size:clamp(16px,2.2vh,21px);color:#4a3a2a}
+.ht-letter .ht-l-sig{font-size:clamp(28px,4vh,38px);margin-top:.4em}
+
+/* fotka a doklady: otáčení, přiblížení */
+.ht-flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .85s cubic-bezier(.4,.1,.2,1)}
+.ht-flip.is-back{transform:rotateY(180deg)}
+.ht-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 26px 44px rgba(0,0,0,.75)}
+.ht-face-back{transform:rotateY(180deg)}
+.ht-photoface{background:#efe5cc;padding:2.6%}
+.ht-photoback img,.ht-photoface img{width:100%;height:100%;object-fit:cover}
+.ht-zoomwin{position:relative;width:100%;height:100%;overflow:hidden;touch-action:none;cursor:zoom-in}
+.ht-zoomwin img{width:100%;height:100%;object-fit:contain;transition:transform .3s ease;transform-origin:50% 50%}
+.ht-docface{position:absolute;inset:0;filter:drop-shadow(0 22px 30px rgba(0,0,0,.75))}
+.ht-docface.lamp-on{touch-action:none;cursor:crosshair}
+.ht-docface.lamp-on .ht-zoomwin{cursor:crosshair}
+.ht-lampshade{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle min(22cqw,26cqh) at var(--lx) var(--ly),rgba(255,232,160,.42),rgba(255,210,120,.12) 45%,rgba(0,0,0,.6) 100%);mix-blend-mode:multiply}
+.ht-lamphandle{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px dashed rgba(255,243,190,.95);background:radial-gradient(circle,rgba(255,243,190,.3),transparent 70%);pointer-events:auto;z-index:3}
+.ht-ink{position:absolute;display:flex;flex-direction:column;justify-content:center;gap:.6em;text-align:center;pointer-events:none;color:rgba(110,62,22,.92);-webkit-mask-image:radial-gradient(circle min(22cqw,26cqh) at calc(var(--lx) * 1) calc(var(--ly) * 1),#000 35%,transparent 75%);mask-image:radial-gradient(circle min(22cqw,26cqh) at var(--lx) var(--ly),#000 35%,transparent 75%)}
+.ht-ink.is-found{-webkit-mask-image:none;mask-image:none;animation:ht-fade 1.2s ease both}
+.ht-ink p{margin:0;font:italic 500 clamp(14px,3.4cqw,34px)/1.15 'Cormorant Garamond',serif;transform:rotate(-2deg)}
+.ht-ink .ht-ink-c{font:400 clamp(13px,3cqw,30px) 'IBM Plex Sans',sans-serif;letter-spacing:.14em;color:rgba(96,50,16,.95)}
+
+/* kotouč */
+.ht-wheel{position:relative;width:100%;aspect-ratio:1;touch-action:none;filter:drop-shadow(0 22px 26px rgba(0,0,0,.75))}
+.ht-wheel.is-i{cursor:grab}
+.ht-wheel.is-i:active{cursor:grabbing}
+.ht-wheel-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ht-wring{transition:transform .3s cubic-bezier(.3,1.35,.5,1)}
+.ht-wring img,.ht-wring svg{position:absolute;inset:0;width:100%;height:100%}
+.ht-wheelgrid{flex:1;min-width:0;min-height:0;display:flex;gap:3vw;align-items:stretch}
+.ht-wheelstage{flex:1.1}
+.ht-wheelstage .ht-fit{width:min(92cqw,86cqh)}
+.ht-wheelside{flex:1;min-width:0;max-width:560px;display:flex;flex-direction:column;justify-content:center;gap:18px;overflow-y:auto;padding:6px 4px}
+.ht-stepper{display:flex;align-items:center;justify-content:center;gap:22px}
+.ht-stepval{font:400 11px 'IBM Plex Sans',sans-serif;letter-spacing:.2em;color:#d6c08a;text-align:center;min-width:70px}
+.ht-stepval b{display:block;font:400 36px 'IBM Plex Sans',sans-serif;color:#f6dfa4;letter-spacing:0}
+.ht-notebook{background:url("../assets/ht/letter_paper.webp") center/cover #e6d6b2;color:#2a1f14;padding:18px 18px 16px;box-shadow:0 18px 30px rgba(0,0,0,.65);transform:rotate(.4deg)}
+.ht-nb-empty{margin:0;font:italic 500 21px/1.2 'Cormorant Garamond',serif;text-align:center}
+.ht-nb-ink{margin:0 0 12px;font:italic 500 19px/1.15 'Cormorant Garamond',serif;color:#6e3e16;text-align:center}
+.ht-reader{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 12px;background:#1b110a;color:#f0d487;border:2px solid #a98532;border-radius:6px;padding:5px 14px;width:max-content;max-width:100%;box-shadow:inset 0 2px 8px #000}
+.ht-reader b{font:400 26px 'IBM Plex Sans',sans-serif}
+.ht-reader i{font:400 12px 'IBM Plex Sans',sans-serif;font-style:normal;color:#b5a272}
+.ht-strip{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 14px}
+.ht-word{display:flex;gap:3px}
+.ht-cell{width:clamp(22px,2.1vw,30px);background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:stretch}
+.ht-cell .c{height:28px;line-height:28px;text-align:center;background:#f3ead2;color:#1f1710;font:400 16px 'IBM Plex Sans',sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.ht-cell .p{height:28px;line-height:28px;text-align:center;border-bottom:2px solid #8a6a26;color:#1c2a5a;font:italic 500 22px 'Cormorant Garamond',serif}
+.ht-cell.sel .c{background:#f4d84a;box-shadow:0 0 0 2px #a8342a}
+.ht-fb{min-height:24px;margin-top:10px;text-align:center;font:italic 500 21px/1.15 'Cormorant Garamond',serif;color:#a8342a}
+.ht-fb.shake{animation:ht-shake .45s}
+@keyframes ht-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.ht-checkrow{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:8px;flex-wrap:wrap}
+.ht-checkrow .ht-linkbtn{color:#6b5a3a}
+
+@media (max-aspect-ratio: 1/1){
+  .ht-wheelstage .ht-fit{width:min(96cqw,96cqh)}
+  .ht-dhead{height:56px;padding:0 10px}
+  .ht-dhead .ht-kicker{display:none}
+  .ht-dbody{padding:4px 12px 6px}
+  .ht-wheelgrid{flex-direction:column;gap:12px;overflow-y:auto}
+  .ht-wheelstage{flex:none;height:min(46vh,92vw)}
+  .ht-wheelside{max-width:none;overflow:visible;justify-content:flex-start}
+  .ht-cell{width:clamp(20px,6.4vw,28px)}
+  .ht-round>svg{width:46px;height:46px;padding:11px}
+}
+
+/* nápověda */
+.ht-hintpanel{position:absolute;right:16px;top:78px;z-index:40;width:min(420px,calc(100vw - 32px));background:url("../assets/ht/letter_paper.webp") center/cover #e8d9ae;color:#2a1f14;padding:16px 18px;box-shadow:0 18px 36px rgba(0,0,0,.75);animation:ht-fade .3s both}
+.ht-hintpanel h3{margin:0 0 8px;font:600 22px 'Cormorant Garamond',serif}
+.ht-hintpanel p{margin:0 0 9px;font:italic 500 20px/1.2 'Cormorant Garamond',serif}
+.ht-hintpanel p.none{font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#6b5a3a}
+.ht-hintpanel .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.ht-hintpanel .ht-linkbtn{color:#6b5a3a}
+
+/* úvod */
+.ht-intro{position:absolute;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(43,22,12,.92),rgba(8,4,2,.97));padding:24px}
+.ht-intro-in{max-width:620px}
+.ht-intro-l{font:500 clamp(20px,2.6vw,26px)/1.45 'Cormorant Garamond',serif;color:#f0dfb2;margin:14px 0;animation:ht-fade 1s ease both}
+.ht-intro .ht-tagbtn{margin-top:22px}
+
+/* odhalení */
+.ht-reveal{position:absolute;inset:0;z-index:30;background:rgba(6,3,2,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4vh;text-align:center;padding:20px}
+.ht-reveal-glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 45% at 50% 45%,rgba(255,190,90,.24),transparent 70%);animation:ht-flick 1.4s steps(1) both}
+@keyframes ht-flick{0%{opacity:0}10%{opacity:1}18%{opacity:.1}26%{opacity:.9}34%{opacity:.2}45%,100%{opacity:1}}
+.ht-reveal-wheel{position:absolute;width:min(90vh,110vw);aspect-ratio:1;opacity:.12;animation:ht-rot 90s linear infinite}
+@keyframes ht-rot{to{transform:rotate(360deg)}}
+.ht-msg{position:relative;margin:0;font:400 clamp(34px,6.4vw,72px)/1.18 'IBM Plex Sans',sans-serif;color:#f6e7bd;text-shadow:0 0 22px rgba(255,190,90,.5),0 2px 0 #000}
+.ht-msgline{display:block}
+.ht-msgline.red{color:#e0453a;text-shadow:0 0 22px rgba(224,69,58,.45),0 2px 0 #000}
+.ht-letterin{display:inline-block;white-space:pre;opacity:0;animation:ht-letter .4s ease forwards}
+@keyframes ht-letter{from{opacity:0;transform:translateY(8px) scale(1.15);filter:blur(4px)}to{opacity:1;transform:none;filter:blur(0)}}
+.ht-reveal-after{position:relative;margin:0;font:italic 500 clamp(18px,2.2vw,24px)/1.35 'Cormorant Garamond',serif;color:#d7c393;max-width:560px}
+.ht-reveal .ht-kicker{position:relative}
+
+/* spis */
+.ht-file{position:absolute;inset:0;z-index:30;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:8vh 18px 40px;gap:28px}
+.ht-casefile{position:relative;width:min(560px,100%);background:#f4ecd8;color:#241a10;padding:54px 28px 28px;box-shadow:0 22px 40px rgba(0,0,0,.7);transform:rotate(-.6deg)}
+.ht-casefile::before,.ht-casefile::after{content:'';position:absolute;inset:0;z-index:-1;box-shadow:0 6px 14px rgba(0,0,0,.4)}
+.ht-casefile::before{background:#fdf7e6;transform:rotate(-3deg)}
+.ht-casefile::after{background:#efe0b8;transform:rotate(2.6deg)}
+.ht-ytag{position:absolute;left:-8px;top:-16px;background:#f4d84a;color:#2a210a;font:400 14px 'IBM Plex Sans',sans-serif;padding:8px 26px 8px 14px;transform:rotate(-2deg);clip-path:polygon(0 0,94% 0,100% 50%,94% 100%,0 100%);box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.ht-pin{position:absolute;right:32px;top:-12px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ef6a5a,#a8342a 60%,#5b1410);box-shadow:0 5px 6px rgba(0,0,0,.4)}
+.ht-casefile dl{margin:0}
+.ht-casefile dt{font:400 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.2em;color:#8a7650;margin-top:14px}
+.ht-casefile dd{margin:4px 0 0;padding-bottom:12px;border-bottom:1px dashed #b8a574;font:400 17px/1.35 'IBM Plex Sans',sans-serif}
+.ht-casefile dd.red{color:#a8342a}
+.ht-casefile dd.small{font-size:13px;border:0}
+.ht-stamp{position:absolute;right:-10px;bottom:-26px;border:3px solid #a8342a;color:#a8342a;font:400 15px/1.15 'IBM Plex Sans',sans-serif;padding:6px 10px;transform:rotate(-8deg);letter-spacing:.08em;text-align:center;background:rgba(244,236,216,.85);display:flex;flex-direction:column}
+.ht-filebtns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.ht-reset{opacity:.75}
+
+@media (prefers-reduced-motion: reduce){
+  .ht *,.ht *::before,.ht *::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
+  .ht-letterin{opacity:1}
+}
+
+/* =========================================================
+   Sjednocení s vizuálním systémem hry (src/game/game.css):
+   Cormorant Garamond = nadpisy a „ručně psané“ texty, IBM Plex Sans = ovládání a text.
+   ========================================================= */
+.ht{font-family:'IBM Plex Sans',sans-serif}
+.ht-kicker{font:500 13.5px 'IBM Plex Sans',sans-serif;letter-spacing:0;color:#e6cb85}
+.ht-plate{display:none}
+.ht-title h1{font:400 clamp(20px,2.5vw,28px)/1 'Special Elite',monospace;letter-spacing:0}
+
+/* tlačítka: mosazná hlavní akce, skleněné ovládání nad stolem */
+.ht .ht-tagbtn{display:inline-flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#241a12;padding:13px 22px;border:0;border-radius:8px;transform:none;clip-path:none;
+  background:linear-gradient(180deg,#ead08f,#b8913f);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 2px 8px rgba(0,0,0,.4)}
+.ht .ht-tagbtn.small{font-size:14px;padding:10px 16px}
+.ht .ht-tagbtn.alt{background:transparent;color:#f3e9d2;box-shadow:inset 0 0 0 1.5px rgba(243,233,210,.45)}
+.ht .ht-tagbtn:disabled{background:rgba(243,233,210,.14);color:rgba(243,233,210,.55);box-shadow:none;opacity:1}
+.ht .ht-exit,.ht .ht-hintbtn{font:500 13.5px 'IBM Plex Sans',sans-serif;letter-spacing:0;color:rgba(243,233,210,.9);background:rgba(20,10,6,.55);
+  border:1px solid rgba(243,233,210,.25);border-radius:20px;padding:8px 14px;box-shadow:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ht .ht-exit:hover,.ht .ht-hintbtn:hover{border-color:#e6cb85;color:#f3e9d2}
+.ht .ht-iconbtn{background:rgba(20,10,6,.55);border:1px solid rgba(243,233,210,.25);color:rgba(243,233,210,.9);box-shadow:none}
+.ht-top{background:linear-gradient(180deg,rgba(14,6,3,.65),rgba(14,6,3,0))}
+.ht-pips i{width:22px;height:4px;border-radius:2px;background:rgba(243,233,210,.25);opacity:1;box-shadow:none}
+.ht-pips i.on{background:#b8913f}
+.ht-pips{gap:5px}
+
+/* kulatá ovládací tlačítka v detailu */
+.ht .ht-round{font:500 12.5px 'IBM Plex Sans',sans-serif;letter-spacing:0;color:rgba(243,233,210,.85)}
+.ht .ht-round>svg{background:rgba(243,233,210,.1);color:#f3e9d2;box-shadow:inset 0 0 0 1px rgba(243,233,210,.28)}
+.ht .ht-round.is-on>svg{background:linear-gradient(180deg,#ead08f,#b8913f);color:#241a12;box-shadow:0 0 16px rgba(230,203,133,.55)}
+.ht .ht-stepper .ht-round{background:rgba(243,233,210,.1);color:#f3e9d2;box-shadow:inset 0 0 0 1px rgba(243,233,210,.28);font:400 26px 'IBM Plex Sans',sans-serif}
+.ht-stepval{font:500 13px 'IBM Plex Sans',sans-serif;letter-spacing:0;color:rgba(243,233,210,.7)}
+.ht-stepval b{font:400 34px/1.05 'Special Elite',monospace;color:#f3e9d2}
+.ht-check{background:#b8913f;border:2px solid #f3e9d2;color:#241a12}
+.ht-designated{font:600 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;color:#8f2a22;border-color:#8f2a22}
+
+/* přepis šifry */
+.ht-cell .c{font:600 16px 'IBM Plex Sans',sans-serif}
+.ht-cell .p{font:italic 600 22px 'Cormorant Garamond',serif;color:#2a2f5a}
+.ht-cell.sel .c{background:#e6cb85;box-shadow:0 0 0 2px #8f2a22}
+.ht-reader b{font:600 26px 'Cormorant Garamond',serif}
+.ht-reader i{font:500 12.5px 'IBM Plex Sans',sans-serif}
+.ht-fb{color:#8f2a22}
+.ht-ink .ht-ink-c{font:500 clamp(12px,2.6cqw,26px) 'IBM Plex Sans',sans-serif;letter-spacing:.16em}
+.ht-hintpanel h3{font:400 20px 'Special Elite',monospace}
+.ht-hintpanel p.none{font:400 14px/1.5 'IBM Plex Sans',sans-serif}
+
+/* úvod a odhalení */
+.ht-intro-l{font:500 clamp(21px,2.6vw,28px)/1.45 'Cormorant Garamond',serif}
+.ht-msg{font:400 clamp(32px,6vw,68px)/1.18 'Special Elite',monospace;letter-spacing:.02em}
+.ht-msgline.red{color:#d2574a}
+.ht-reveal-after{font:italic 500 clamp(19px,2.3vw,25px)/1.4 'Cormorant Garamond',serif}
+
+/* spis minihry = stejný papír jako ve hře */
+.ht-casefile{background:#efe4cc url("../assets/ht/letter_paper.webp") center/cover;transform:none;border-radius:2px;padding:34px 32px 30px;box-shadow:0 1px 1px rgba(0,0,0,.25),0 22px 44px rgba(0,0,0,.55)}
+.ht-casefile::before,.ht-casefile::after{display:none}
+.ht-fkicker{margin:0 0 6px;font:500 13.5px 'IBM Plex Sans',sans-serif;color:#8f2a22}
+.ht-casefile dt{font:500 13px 'IBM Plex Sans',sans-serif;letter-spacing:0;color:#5e4c39;margin-top:16px}
+.ht-casefile dd{font:600 21px/1.25 'Cormorant Garamond',serif;color:#241a12;border-bottom:1px solid rgba(36,26,18,.14)}
+.ht-casefile dd.red{color:#8f2a22}
+.ht-casefile dd.small{font:400 14px/1.5 'IBM Plex Sans',sans-serif;color:#5e4c39}
+.ht-stamp{font:700 14px/1.15 'IBM Plex Sans',sans-serif;letter-spacing:.08em;color:#8f2a22;border-color:#8f2a22;bottom:-22px}
+.ht-linkbtn{font:500 13.5px 'IBM Plex Sans',sans-serif}
+.ht-file .ht-linkbtn{color:rgba(243,233,210,.7)}
+
+@media (max-aspect-ratio: 1/1){ .ht-title h1{display:none} .ht-title{display:flex;justify-content:center} }

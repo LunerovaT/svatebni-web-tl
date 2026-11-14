@@ -1,0 +1,890 @@
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import {
+  collection, addDoc, query, where, getDocs, doc, updateDoc, onSnapshot, serverTimestamp, deleteField, runTransaction,
+} from "firebase/firestore";
+import { db } from "./firebase.js";
+import monogram from "./assets/monogram.webp";
+import cluster from "./assets/cluster.webp";
+import corner from "./assets/corner.webp";
+import paperBg from "./assets/paper_bg.webp";
+import gameBg from "./assets/game_bg.webp";
+import folderClipBg from "./assets/game_bg2.webp"; // nové kompozitní pozadí (papír na sponce na textuře)
+import exitIcon from "./assets/exit_icon.webp";
+import blood from "./assets/blood.webp";
+import blood2 from "./assets/blood2.webp";
+import clipping from "./assets/clipping.webp";
+import clipping2 from "./assets/clipping2.webp";
+import clipping3 from "./assets/clipping3.webp";
+import photo1 from "./assets/photo1.webp";
+import photo2 from "./assets/photo2.webp";
+import tape from "./assets/tape.webp";
+import StationPage from "./StationPage.jsx";
+import { HomePage, WherePage, InfoPage } from "./public/PublicPages.jsx";
+import { VENUE, DATES } from "./public/venue.js";
+import "./public/public.css";
+const AdminPage = lazy(() => import("./AdminPage.jsx"));   // jen organizátoři – nezatěžuje hráče
+const TasksPage = lazy(() => import("./TasksPage.jsx"));   // jen organizátoři – nezatěžuje hráče
+const TasksAdminPage = lazy(() => import("./TasksAdminPage.jsx"));   // jen organizátoři – nezatěžuje hráče
+import ProfilePage from "./ProfilePage.jsx";
+import { Pushpin, ClueTag, Polaroid, ConfidentialStamp, MapIcon, Footprints, ProgressStrip, TagButton } from "./CaseFileBits.jsx";
+import MapPage from "./MapPage.jsx";
+import HomeTask from "./hometask/HomeTask.jsx";
+import { STATIONS, FINAL_REQUIRES, doneCountOf } from "./stations/stations.js";
+import "./game/game.css";
+import TestPanel, { isTestMode } from "./game/TestPanel.jsx";
+import { EvidenceShelf, TeamFeed, InvestigatorLog, SuspectsBoard, Accusation, weddingCountdown } from "./game/CaseParts.jsx";
+import { collectEvidence } from "./story/evidence.js";
+import deskTable from "./assets/ht/table.webp";
+import deskInk from "./assets/ev/ink.webp";
+import deskBooks from "./assets/ev/books.webp";
+import deskLamp from "./assets/ht/lamp.webp";
+import deskTag from "./assets/ht/tag.webp";
+import deskPostcard from "./assets/ht/postcard.webp";
+
+const SLEEP_LABELS = {
+  pokoj: "Nejlépe 1 celý pokoj",
+  sdileny: "Nevadí mi víc lidí v jednom pokoji",
+  stan: "Ve stanu / autě",
+};
+
+const NAV_ITEMS = [
+  { id: "home", label: "Domů" },
+  { id: "kde", label: "Kdy a kde" },
+  { id: "info", label: "Informace" },
+  { id: "rsvp", label: "Potvrdit účast" },
+  { id: "hra", label: "Hra" },
+];
+
+
+function useHashRoute() {
+  const [page, setPage] = useState(() => location.hash.replace("#/", "") || "home");
+  useEffect(() => {
+    const onHash = () => setPage(location.hash.replace("#/", "") || "home");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const go = (id) => {
+    location.hash = "#/" + (id === "home" ? "" : id);
+    setPage(id);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+  return [page, go];
+}
+
+export default function WeddingSite() {
+  const [page, go] = useHashRoute();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [chosenPath, setChosenPath] = useState(null);
+
+  // --- RSVP (sjednocené se založením herního účtu) ---
+  const [rsvpName, setRsvpName] = useState("");
+  const [rsvpEmail, setRsvpEmail] = useState("");
+  const [rsvpAttending, setRsvpAttending] = useState("ano");
+  const [rsvpGame, setRsvpGame] = useState("ano");
+  const [sleepWants, setSleepWants] = useState("ano");
+  const [sleepRank, setSleepRank] = useState(["pokoj", "sdileny", "stan"]);
+  const [travel, setTravel] = useState("auto");
+  const [travelFrom, setTravelFrom] = useState("");
+  const [arrival, setArrival] = useState("patek");
+  const [arrivalOther, setArrivalOther] = useState("");
+  const moveRank = (i, d) => setSleepRank((r) => { const n = [...r]; const j = i + d; if (j < 0 || j >= n.length) return r; [n[i], n[j]] = [n[j], n[i]]; return n; });
+  const [guests, setGuests] = useState([]);
+  const addGuest = () => setGuests((g) => (g.length >= 8 ? g : [...g, { name: "", sleep: "ano" }]));
+  const setGuest = (i, patch) => setGuests((g) => g.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const removeGuest = (i) => setGuests((g) => g.filter((_, j) => j !== i));
+  const [rsvpBusy, setRsvpBusy] = useState(false);
+  const [rsvpError, setRsvpError] = useState("");
+  const [rsvpDone, setRsvpDone] = useState(false);
+
+  const submitRsvp = async (e) => {
+    e.preventDefault();
+    if (!rsvpName.trim()) { setRsvpError("Vyplňte prosím jméno."); return; }
+    if (!rsvpEmail.trim()) { setRsvpError("Vyplňte prosím e-mail — budete ho případně potřebovat i pro přihlášení do hry."); return; }
+    if (rsvpAttending === "ano" && guests.some((g) => !g.name.trim())) { setRsvpError("Doplňte prosím jména všech přidaných osob, nebo je odeberte."); return; }
+    setRsvpError("");
+    setRsvpBusy(true);
+    try {
+      const email = rsvpEmail.trim().toLowerCase();
+      await addDoc(collection(db, "rsvps"), {
+        name: rsvpName.trim(),
+        contact: email,
+        attending: rsvpAttending,
+        wantsGame: rsvpGame,
+        ...(rsvpAttending === "ano" ? {
+          sleep: sleepWants,
+          sleepRank: sleepWants === "ano" ? sleepRank : [],
+          travel,
+          travelFrom: travel === "odvoz" ? travelFrom.trim().slice(0, 120) : "",
+          arrival,
+          arrivalOther: arrival === "jindy" ? arrivalOther.trim().slice(0, 200) : "",
+          guests: guests.slice(0, 8).map((g) => ({ name: g.name.trim().slice(0, 120), sleep: g.sleep })),
+        } : {}),
+        createdAt: serverTimestamp(),
+      });
+      if (rsvpGame === "ano") {
+        const existing = await getDocs(query(collection(db, "players"), where("contact", "==", email)));
+        if (existing.empty) {
+          await addDoc(collection(db, "players"), {
+            name: rsvpName.trim(),
+            contact: email,
+            teamId: null,
+            homeClueSolved: false,
+            createdAt: serverTimestamp(),
+          });
+        }
+      }
+      setRsvpDone(true);
+    } catch (err) {
+      setRsvpError("Něco se nepovedlo, zkuste to prosím znovu. (" + err.message + ")");
+    } finally {
+      setRsvpBusy(false);
+    }
+  };
+
+  // --- registrace / přihlášení hráče (Firestore, kolekce "players" a "teams") ---
+  const [authMode, setAuthMode] = useState("register"); // "register" | "login"
+  const [playerName, setPlayerName] = useState("");
+  const [contact, setContact] = useState("");
+  const [formError, setFormError] = useState("");
+  const [formBusy, setFormBusy] = useState(false);
+
+  const [myPlayerId, setMyPlayerId] = useState(null);
+  const [myPlayer, setMyPlayer] = useState(null); // živý dokument hráče (jméno, teamId, homeClueSolved...)
+  const [myTeam, setMyTeam] = useState(null); // živá data týmu (postup, jméno, role, backstory)
+
+  const submitRegistration = async (e) => {
+    e.preventDefault();
+    if (!playerName.trim()) { setFormError("Vyplňte prosím své jméno."); return; }
+    if (!contact.trim()) { setFormError("Vyplňte kontakt (e-mail)."); return; }
+    setFormError("");
+    setFormBusy(true);
+    try {
+      const email = contact.trim().toLowerCase();
+      const existing = await getDocs(query(collection(db, "players"), where("contact", "==", email)));
+      if (!existing.empty) {
+        setFormError("Tenhle e-mail už je zaregistrovaný — zkuste se místo toho přihlásit.");
+        setAuthMode("login");
+        return;
+      }
+      const ref = await addDoc(collection(db, "players"), {
+        name: playerName.trim(),
+        contact: email,
+        teamId: null,
+        homeClueSolved: false,
+        createdAt: serverTimestamp(),
+      });
+      setMyPlayerId(ref.id);
+    } catch (err) {
+      setFormError("Registraci se nepodařilo uložit, zkuste to prosím znovu. (" + err.message + ")");
+    } finally {
+      setFormBusy(false);
+    }
+  };
+
+  const submitLogin = async (e) => {
+    e.preventDefault();
+    if (!contact.trim()) { setFormError("Zadejte e-mail, se kterým jste se registrovali."); return; }
+    setFormError("");
+    setFormBusy(true);
+    try {
+      const q = query(collection(db, "players"), where("contact", "==", contact.trim().toLowerCase()));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        setFormError("Tenhle e-mail nenacházíme mezi registracemi. Zkuste to prosím znovu, nebo se zaregistrujte výše.");
+        return;
+      }
+      setMyPlayerId(snap.docs[0].id);
+    } catch (err) {
+      setFormError("Něco se nepovedlo, zkuste to prosím znovu. (" + err.message + ")");
+    } finally {
+      setFormBusy(false);
+    }
+  };
+
+  const logout = () => {
+    setMyPlayerId(null);
+    setMyPlayer(null);
+    setMyTeam(null);
+    setPlayerName("");
+    setContact("");
+    setFormError("");
+    setAuthMode("login");
+    go("hra");
+  };
+
+  // živý poslech na vlastní profil — jakmile admin přiřadí tým, appka to uvidí sama, bez nutnosti znovu se přihlásit
+  useEffect(() => {
+    if (!myPlayerId) return;
+    const unsub = onSnapshot(doc(db, "players", myPlayerId), (snap) => {
+      if (snap.exists()) setMyPlayer({ id: snap.id, ...snap.data() });
+    }, (err) => console.warn("Profil se nepodařilo načíst:", err));
+    return () => unsub();
+  }, [myPlayerId]);
+
+  // živý poslech na tým, jakmile ho hráč má přiřazený — sdílené napříč telefony celého týmu
+  useEffect(() => {
+    const teamId = myPlayer?.teamId;
+    if (!teamId) { setMyTeam(null); return; }
+    const unsub = onSnapshot(doc(db, "teams", teamId), (snap) => {
+      setMyTeam(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+    }, (err) => console.warn("Tým se nepodařilo načíst:", err));
+    return () => unsub();
+  }, [myPlayer?.teamId]);
+
+  // členové týmu (kvůli Důkazu 01 z domácího úkolu a dění v týmu)
+  const [teamMembers, setTeamMembers] = useState([]);
+  useEffect(() => {
+    const teamId = myPlayer?.teamId;
+    if (!teamId) { setTeamMembers([]); return; }
+    const unsub = onSnapshot(query(collection(db, "players"), where("teamId", "==", teamId)), (snap) => {
+      setTeamMembers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    }, (err) => console.warn("Členy týmu se nepodařilo načíst:", err));
+    return () => unsub();
+  }, [myPlayer?.teamId]);
+
+  // všechny týmy – jen po odhalení výsledků (pořadí)
+  const [allTeams, setAllTeams] = useState([]);
+  useEffect(() => {
+    if (page !== "vysetrovani" || !myTeam?.revealed) return;
+    const unsub = onSnapshot(collection(db, "teams"), (snap) => setAllTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
+    return () => unsub();
+  }, [page, myTeam?.revealed]);
+
+  const solveHomeClue = async (stats) => {
+    if (!myPlayerId) return;
+    // stats z domácí minihry (nápovědy, chybně určené doklady, pokusy) – hodí se pro ladění obtížnosti
+    await updateDoc(doc(db, "players", myPlayerId), {
+      homeClueSolved: true,
+      ...(stats ? { homeTask: { ...stats, solvedAt: serverTimestamp() } } : {}),
+    });
+  };
+
+  const choosePath = (which) => {
+    setChosenPath(which);
+    setTimeout(() => go(which === "info" ? "info" : "hra"), 650);
+  };
+
+  // --- stanoviště — postup se čte/zapisuje na dokument týmu (pole stationsDone jako mapa "0"..."7") ---
+  const stationsDoneMap = myTeam?.stationsDone || {};
+  const completeStation = async (i) => {
+    if (!myTeam?.id) throw new Error("Tým není načtený.");
+    if (myTeam?.stationsDone?.[i]) return;          // už vyřešeno – nic nezapisovat podruhé
+    await updateDoc(doc(db, "teams", myTeam.id), {
+      [`stationsDone.${i}`]: true,
+      [`stationsSolvedAt.${i}`]: serverTimestamp(),
+      [`stationsSolvedBy.${i}`]: myPlayer?.name || null,
+    });
+  };
+  // nápovědy: stav je na dokumentu týmu (hintsOpened.N = nejvyšší odkrytá úroveň), 3. úroveň zapíše záznam jen jednou (transakce)
+  const openHint = async (i, level) => {
+    if (!myTeam?.id) throw new Error("Tým není načtený.");
+    const ref = doc(db, "teams", myTeam.id);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const d = snap.data() || {};
+      const cur = d.hintsOpened?.[i] || 0;
+      if (level <= cur || level > cur + 1) return;      // už odkryto / přeskočení úrovně
+      const upd = { [`hintsOpened.${i}`]: level };
+      if (level === 3 && !d.expertAssist?.[i]) upd[`expertAssist.${i}`] = { at: serverTimestamp(), by: myPlayer?.name || null };
+      tx.update(ref, upd);
+    });
+  };
+  const evidence = useMemo(() => collectEvidence({ team: myTeam, members: teamMembers, player: myPlayer }), [myTeam, teamMembers, myPlayer]);
+
+  // finální obvinění – zapečetí se jen jednou
+  const sealAccusation = async ({ suspect, motive, evidence: ev }) => {
+    if (!myTeam?.id || myTeam.accusation) return;
+    await updateDoc(doc(db, "teams", myTeam.id), { accusation: { suspect, motive, evidence: ev, by: myPlayer?.name || null, at: serverTimestamp() } });
+  };
+
+  // --- testovací režim (tlačítko Test) ---
+  const testActions = {
+    onResetStation: async (i) => {
+      await updateDoc(doc(db, "teams", myTeam.id), { [`stationsDone.${i}`]: deleteField(), [`stationsSolvedAt.${i}`]: deleteField(), [`stationsSolvedBy.${i}`]: deleteField() });
+    },
+    onResetAllStations: async () => {
+      await updateDoc(doc(db, "teams", myTeam.id), { stationsDone: {}, stationsSolvedAt: {}, stationsSolvedBy: {}, hintsOpened: {}, expertAssist: {} });
+    },
+    onSolveAllStations: async () => {
+      const upd = {};
+      STATIONS.forEach((_, i) => {
+        if (!myTeam?.stationsDone?.[i]) { upd[`stationsDone.${i}`] = true; upd[`stationsSolvedAt.${i}`] = serverTimestamp(); upd[`stationsSolvedBy.${i}`] = myPlayer?.name || null; }
+      });
+      if (Object.keys(upd).length) await updateDoc(doc(db, "teams", myTeam.id), upd);
+    },
+    onResetHomeTask: async () => {
+      try { localStorage.removeItem("wedding_hometask_v2"); } catch { /* ignore */ }
+      if (myPlayerId) await updateDoc(doc(db, "players", myPlayerId), { homeClueSolved: false, homeTask: deleteField(), homeTaskResetAt: serverTimestamp() });
+      else window.location.reload();
+    },
+    onResetAccusation: async () => {
+      await updateDoc(doc(db, "teams", myTeam.id), { accusation: deleteField(), revealed: false });
+    },
+    onToggleReveal: async () => {
+      await updateDoc(doc(db, "teams", myTeam.id), { revealed: !myTeam?.revealed });
+    },
+  };
+  const stationsDoneCount = doneCountOf(stationsDoneMap);
+  const finalUnlocked = stationsDoneCount >= FINAL_REQUIRES;
+
+  const stationMatch = page.match(/^stanoviste\/(\d+)(?:\?(.*))?$/);
+  const stationIndex = stationMatch ? parseInt(stationMatch[1], 10) - 1 : null;
+  // QR kód ze schránky (#/stanoviste/N?k=KOD) – kód si pamatujeme i přes přihlášení
+  let stationQrKey = null;
+  if (stationMatch) {
+    const k = new URLSearchParams(stationMatch[2] || "").get("k");
+    try {
+      if (k) sessionStorage.setItem(`qr_${stationIndex}`, k);
+      stationQrKey = k || sessionStorage.getItem(`qr_${stationIndex}`);
+    } catch { stationQrKey = k; }
+  }
+  const isGameScreen = page === "hra" || page === "uvod" || page === "pripad" || page === "profil" || page === "mapa" || page === "vysetrovani" || stationIndex !== null;
+
+  const gameBackLabel = "⌂";
+
+  // Domácí minihra je samostatná celoobrazovková scéna (bez hlavičky a patičky webu).
+  if (page === "domaci-ukol") {
+    return (
+      <>
+      <HomeTask
+        alreadySolved={!!myPlayer?.homeClueSolved}
+        resetToken={myPlayer?.homeTaskResetAt?.toMillis?.() ?? null}
+        onSolved={solveHomeClue}
+        onExit={() => go(myPlayerId ? "profil" : "hra")}
+        onContinue={() => go("hra")}
+      />
+      {isTestMode() && (
+        <TestPanel stationIndex={stationIndex} stationTitle={stationIndex !== null ? (STATIONS[stationIndex]?.title || STATIONS[stationIndex]?.name) : null}
+                   hasTeam={!!myTeam?.id} isLoggedIn={!!myPlayerId} revealed={!!myTeam?.revealed} {...testActions} />
+      )}
+      </>
+    );
+  }
+
+  return (
+    <div style={{ fontFamily: "'IBM Plex Sans', sans-serif", background: isGameScreen ? "#1a0c07" : "#F6F0E3", color: "#221D16", minHeight: "100%", position: "relative" }} className={isGameScreen ? "" : "pb-root"}>
+      {/* full-page watermark — the corner graphic, faint but actually visible now, fixed behind everything */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, overflow: "hidden", pointerEvents: "none" }}>
+        <img src={corner} alt="" style={{ position: "absolute", width: "70vw", minWidth: 900, maxWidth: 1400, right: "-8vw", top: "50%", transform: "translateY(-50%) rotate(4deg)", opacity: 0.14, mixBlendMode: "multiply" }} />
+      </div>
+      <div style={{ position: "relative", zIndex: 1 }}>
+      <style>{`
+        .display{ font-family:'Cormorant Garamond', serif; font-weight:500; letter-spacing:.01em; }
+        .wrap{ max-width:1100px; margin:0 auto; padding:0 24px; }
+        section.block{ padding:64px 0; border-bottom:1px solid rgba(0,0,0,0.07); }
+        section.block:last-child{ border-bottom:none; }
+        .eyebrow{ font-size:13px; color:#93713c; margin:0 0 10px; }
+        .lede{ color:#6b6153; max-width:52ch; font-size:15.5px; margin:0; }
+        .hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:24px; align-items:center; }
+        @media (max-width:820px){
+          .hero-grid{ grid-template-columns:1fr; }
+          .hero-grid > div:last-child{ max-width:200px; margin:6px auto 0; }
+          .hero-monogram{ width:100% !important; margin-left:0 !important; opacity:0.85 !important; }
+        }
+        .hero-monogram{ width:125%; max-width:none; margin-left:-10%; opacity:0.92; display:block; }
+
+        /* --- interactive path chooser --- */
+        .paths{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+        @media (max-width:700px){ .paths{ grid-template-columns:1fr; } }
+        .path{
+          position:relative; overflow:hidden; border-radius:10px; cursor:pointer;
+          padding:32px 32px 30px; border:1px solid rgba(255,255,255,0.12);
+          background:rgba(255,255,255,0.03);
+          transition:transform .25s ease, box-shadow .25s ease, background .25s ease, border-color .25s ease;
+        }
+        .path:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(0,0,0,0.25); background:rgba(255,255,255,0.06); }
+        .path.active{ background:rgba(201,169,98,0.10); border-color:#c9a962; box-shadow:0 14px 30px rgba(0,0,0,0.25); }
+        .path .p-content{ position:relative; z-index:1; }
+        @media (max-width:600px){
+          .panel-corner-graphic{ display:none; }
+        }
+        .path button{
+          font-family:'IBM Plex Sans'; font-size:14px; background:none;
+          border:1px solid #EDE6D6; color:#EDE6D6; padding:10px 18px; cursor:pointer;
+          border-radius:5px; transition:all .2s ease;
+        }
+        .path.active button{ background:#c9a962; border-color:#c9a962; color:#1C1712; }
+        .path-check{
+          position:absolute; top:18px; right:18px; width:22px; height:22px; border-radius:50%;
+          border:1px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center;
+          font-size:12px; color:transparent; transition:all .25s ease; transform:scale(0.7);
+        }
+        .path.active .path-check{ background:#c9a962; border-color:#c9a962; color:#1C1712; transform:scale(1); }
+
+        .result{
+          margin-top:22px; border:1px solid rgba(201,169,98,0.35); border-radius:8px;
+          padding:0 24px; font-size:14px; color:#c9bfa9;
+          max-height:0; opacity:0; overflow:hidden;
+          transition:max-height .35s ease, opacity .3s ease, padding .35s ease;
+        }
+        .result.show{ max-height:140px; opacity:1; padding:20px 24px; }
+        .result b{ color:#EDE6D6; }
+
+        .cols-2{ display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+        @media (max-width:760px){ .cols-2{ grid-template-columns:1fr; } }
+        .card-plain{ border-top:1px solid rgba(0,0,0,0.08); padding-top:18px; }
+        .card-plain h4{ font-size:17px; margin:0 0 6px; }
+        .card-plain p{ font-size:14.5px; color:#6b6153; margin:0; }
+        .placeholder{ display:inline-block; font-size:11.5px; color:#5f6f52; border:1px solid #5f6f52; padding:1px 6px; margin-left:8px; border-radius:2px; }
+        .timeline{ max-width:520px; }
+        .t-row{ display:flex; gap:18px; padding:14px 0; border-top:1px solid rgba(0,0,0,0.08); }
+        .t-row:last-child{ border-bottom:1px solid rgba(0,0,0,0.08); }
+        .t-time{ font-family:'Cormorant Garamond'; font-size:20px; width:74px; flex:none; color:#93713c; }
+        .t-body h4{ margin:0 0 3px; font-size:15px; }
+        .t-body p{ margin:0; font-size:13.5px; color:#6b6153; }
+        .rsvp-grid{ display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; }
+        @media (max-width:820px){ .rsvp-grid{ grid-template-columns:1fr; } }
+        .field{ border-bottom:1px solid #221D16; padding:8px 2px; }
+        .field label{ display:block; font-size:11.5px; color:#93713c; margin-bottom:2px; }
+        .field input, .field select{ width:100%; border:none; background:none; font-family:'IBM Plex Sans'; font-size:14px; color:#221D16; }
+        .field input:-webkit-autofill,
+        .field input:-webkit-autofill:hover,
+        .field input:-webkit-autofill:focus{
+          -webkit-text-fill-color: #2c2416;
+          -webkit-box-shadow: 0 0 0px 1000px #f4ecd8 inset;
+          box-shadow: 0 0 0px 1000px #f4ecd8 inset;
+          transition: background-color 9999s ease-in-out 0s;
+        }
+        .field input:focus, .field select:focus{ outline:none; }
+        .btn{ font-family:'IBM Plex Sans'; font-size:14px; background:none; border:1px solid #221D16; color:#221D16; padding:10px 18px; cursor:pointer; }
+        .gate-btn{ display:inline-block; margin-top:14px; padding:13px 26px; background:#221D16; color:#FBF9F5; border:none; font-family:'IBM Plex Sans'; font-size:14.5px; cursor:not-allowed; opacity:.45; }
+        .seal{ display:inline-block; font-size:12px; letter-spacing:.04em; color:#a8604f; border:1px solid #a8604f; padding:4px 10px; margin-bottom:18px; }
+        nav.links a{ text-decoration:none; color:#6b6153; padding:6px 0; border-bottom:1px solid transparent; font-size:14px; }
+        nav.links a.active, nav.links a:hover{ color:#221D16; border-color:#93713c; }
+
+        @media (max-width:760px){
+          nav.links{ display:none !important; }
+          .burger-btn{ display:block !important; font-size:22px; }
+        }
+        /* pozadí herních obrazovek: mahagonový stůl se světlem lampy (zbytek stylu hry je v src/game/game.css) */
+        .game-bg-fixed{ position:fixed; inset:0; z-index:0; overflow:hidden; background:#2a130b url(${deskTable}) center/cover no-repeat; }
+        .game-bg-fixed::before{ content:""; position:absolute; inset:0; pointer-events:none;
+          background:radial-gradient(ellipse 70% 55% at 18% 10%, rgba(255,196,120,.26), rgba(255,160,80,.06) 45%, transparent 70%); mix-blend-mode:screen; }
+        .game-bg-fixed::after{ content:""; position:absolute; inset:0; pointer-events:none;
+          background:radial-gradient(ellipse 95% 85% at 50% 40%, transparent 45%, rgba(0,0,0,.6) 100%); }
+        .game-bg-fixed .grain{ position:absolute; inset:0; opacity:.07; pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>"); }
+      `}</style>
+
+      {isGameScreen && (
+        <div className="game-bg-fixed"><div className="grain" />
+          <img className="game-decor hide-sm" src={deskLamp} alt="" style={{ top: "-7vh", left: "-3vw", height: "44vh", transform: "rotate(8deg)" }} />
+          <img className="game-decor hide-sm" src={deskPostcard} alt="" style={{ bottom: "-6vh", left: "6vw", height: "24vh", transform: "rotate(9deg)", opacity: 0.9 }} />
+          <img className="game-decor hide-sm" src={deskInk} alt="" style={{ top: "14vh", left: "2vw", width: "7vw", opacity: 0.95 }} />
+          <img className="game-decor hide-sm" src={deskBooks} alt="" style={{ bottom: "-4vh", right: "12vw", width: "20vw", opacity: 0.95 }} />
+          <img className="game-decor hide-sm" src={deskTag} alt="" style={{ bottom: "-5vh", right: "-2vw", height: "20vh", transform: "rotate(-18deg)", opacity: 0.85 }} />
+        </div>
+      )}
+
+      {isGameScreen ? (
+        <header className={`g-top${myPlayerId ? "" : " no-nav"}`}>
+          <button className="g-brand" onClick={() => go("hra")}>Případ poslední vůle</button>
+          {myPlayerId && (
+            <nav className="g-nav" aria-label="Hra">
+              {[
+                { id: "hra", label: "Spis", show: true, icon: <path d="M4 5h6l2 2h8v12H4z" /> },
+                { id: "mapa", label: "Mapa", show: !!myTeam, icon: <><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z" /><path d="M9 4v14M15 6v14" /></> },
+                { id: "pripad", label: "Příběh", show: !!myTeam, icon: <><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" /><path d="M9 9h6M9 13h6" /></> },
+                { id: "profil", label: "Profil", show: true, icon: <><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></> },
+              ].filter((n) => n.show).map((n) => (
+                <a key={n.id} href={`#/${n.id}`} onClick={(e) => { e.preventDefault(); go(n.id); }}
+                   className={page === n.id || (n.id === "mapa" && stationIndex !== null) ? "active" : ""}
+                   aria-current={page === n.id ? "page" : undefined}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{n.icon}</svg>
+                  {n.label}
+                </a>
+              ))}
+            </nav>
+          )}
+          <button className="g-exit" onClick={() => go("home")} aria-label="Zpět na svatební web" title="Zpět na svatební web">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h5v16h-5" /><path d="M10 8l-4 4 4 4M6 12h10" /></svg>
+            <span>Svatební web</span>
+          </button>
+        </header>
+      ) : (
+      <>
+      <header className="pb-top">
+        <a className="pb-gamebar" href="#/hra" onClick={(e) => { e.preventDefault(); go("hra"); }}>
+          <span className="pb-gamebar-dot" aria-hidden="true" />
+          <span><b>Případ poslední vůle</b><span className="pb-gamebar-long"> · svatební detektivka pro hosty</span></span>
+          <span className="pb-gamebar-go">Zahrát si →</span>
+        </a>
+        <div className="wrap" style={{ height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <span className="display" style={{ fontSize: 22, letterSpacing: "0.05em" }}>L · T</span>
+            <span style={{ fontSize: 12, color: "#6b6153" }}>{DATES.label}</span>
+          </div>
+          <nav className="links" style={{ display: "flex", gap: 30, alignItems: "center" }}>
+            {NAV_ITEMS.map((n) => (
+              <a key={n.id} href={"#/" + (n.id === "home" ? "" : n.id)}
+                 className={(page === n.id ? "active " : "") + (n.id === "hra" ? "pb-nav-game" : "")}
+                 onClick={(e) => { e.preventDefault(); go(n.id); }}>
+                {n.label}
+              </a>
+            ))}
+          </nav>
+          <button onClick={() => setMobileOpen(true)} style={{ display: "none", border: "none", background: "none" }} className="burger-btn">☰</button>
+        </div>
+      </header>
+
+      {mobileOpen && (
+        <div style={{ position: "fixed", inset: 0, top: 104, background: "#F6F0E3", zIndex: 39, padding: "30px 24px", display: "flex", flexDirection: "column", gap: 22 }}>
+          {NAV_ITEMS.map((n) => (
+            <a key={n.id} href={"#/" + (n.id === "home" ? "" : n.id)} className="display"
+               style={{ fontSize: 26, textDecoration: "none", color: n.id === "hra" ? "#93713c" : "#221D16", fontWeight: n.id === "hra" ? 600 : 500 }}
+               onClick={(e) => { e.preventDefault(); go(n.id); setMobileOpen(false); }}>
+              {n.label}
+            </a>
+          ))}
+        </div>
+      )}
+      </>
+      )}
+
+      {isGameScreen && isTestMode() && (
+        <TestPanel stationIndex={stationIndex} stationTitle={stationIndex !== null ? (STATIONS[stationIndex]?.title || STATIONS[stationIndex]?.name) : null}
+                   hasTeam={!!myTeam?.id} isLoggedIn={!!myPlayerId} revealed={!!myTeam?.revealed} {...testActions} />
+      )}
+      <main className={isGameScreen ? "game-shell" : ""}>
+        {page === "home" && <HomePage go={go} choosePath={choosePath} chosenPath={chosenPath} />}
+        {page === "kde" && <WherePage />}
+        {page === "info" && <InfoPage />}
+
+        {page === "rsvp" && (
+          <section className="pb-sec" style={{ position: "relative", overflow: "hidden", paddingTop: 56 }}>
+            <img src={cluster} alt="" style={{ position: "absolute", opacity: 0.12, left: "-16%", bottom: "-25%", width: 560, transform: "scaleX(-1)", pointerEvents: "none", mixBlendMode: "multiply" }} />
+            <div className="wrap" style={{ position: "relative", maxWidth: 560 }}>
+              <div style={{ marginBottom: 18 }}>
+                <h1 className="display pb-h1s">Potvrdit účast</h1>
+                <p className="lede">Dejte nám vědět, zda dorazíte, kde budete spát a jak se k nám dopravíte, a jestli se přidáte i do hry. Termín: {DATES.long}, {VENUE.name}.</p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%" }}>
+                {!rsvpDone ? (
+                  <form onSubmit={submitRsvp} className="pb-form">
+                    <div className="field">
+                      <label>Jméno a příjmení</label>
+                      <input type="text" value={rsvpName} onChange={(e) => setRsvpName(e.target.value)} />
+                    </div>
+                    <div className="field">
+                      <label>E-mail</label>
+                      <input type="email" value={rsvpEmail} onChange={(e) => setRsvpEmail(e.target.value)} placeholder="kvůli případnému přihlášení do hry" />
+                    </div>
+                    <div className="field">
+                      <label>Zúčastním se</label>
+                      <select value={rsvpAttending} onChange={(e) => setRsvpAttending(e.target.value)}>
+                        <option value="ano">Ano, s radostí</option>
+                        <option value="ne">Bohužel ne</option>
+                      </select>
+                    </div>
+                    {rsvpAttending === "ano" && (<>
+                    <div className="field">
+                      <label>Kdy přijedu</label>
+                      <select value={arrival} onChange={(e) => setArrival(e.target.value)}>
+                        <option value="patek">Nejlépe v pátek</option>
+                        <option value="sobota">V sobotu ráno</option>
+                        <option value="jindy">Jindy</option>
+                      </select>
+                      {arrival === "jindy" && <input type="text" maxLength={200} value={arrivalOther} onChange={(e) => setArrivalOther(e.target.value)} placeholder="Kdy zhruba?" style={{ marginTop: 6 }} />}
+                    </div>
+                    <div className="field">
+                      <label>Chci přespat</label>
+                      <select value={sleepWants} onChange={(e) => setSleepWants(e.target.value)}>
+                        <option value="ano">Ano</option>
+                        <option value="ne">Nechci přespat</option>
+                      </select>
+                    </div>
+                    {sleepWants === "ano" && (
+                      <div className="field pb-rank">
+                        <label>Seřaďte podle preference (nahoře je nejlepší varianta)</label>
+                        <ol>
+                          {sleepRank.map((k, i) => (
+                            <li key={k}>
+                              <span>{SLEEP_LABELS[k]}</span>
+                              <span className="pb-rank-btns">
+                                <button type="button" aria-label="Posunout výš" disabled={i === 0} onClick={() => moveRank(i, -1)}>↑</button>
+                                <button type="button" aria-label="Posunout níž" disabled={i === sleepRank.length - 1} onClick={() => moveRank(i, 1)}>↓</button>
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                        <p className="pb-rank-note">Podle toho budeme přidělovat pokoje.</p>
+                      </div>
+                    )}
+                    <div className="field">
+                      <label>Doprava</label>
+                      <select value={travel} onChange={(e) => setTravel(e.target.value)}>
+                        <option value="auto">Dojedu autem</option>
+                        <option value="odvoz">Potřebuji odvést</option>
+                        <option value="jinak">Jedu jinak</option>
+                      </select>
+                      {travel === "odvoz" && <input type="text" maxLength={120} value={travelFrom} onChange={(e) => setTravelFrom(e.target.value)} placeholder="Odkud (město, zastávka)?" style={{ marginTop: 6 }} />}
+                    </div>
+                    <div className="field pb-guests">
+                      <label>Registruji i další osoby</label>
+                      <p className="pb-guests-note">Hodí se, když vyplňujete za celou skupinu (partner, děti, babička, teta…). Každý z nich bude mít v seznamu vlastní jméno.</p>
+                      {guests.map((g, i) => (
+                        <div className="pb-guest" key={i}>
+                          <input type="text" maxLength={120} value={g.name} onChange={(e) => setGuest(i, { name: e.target.value })} placeholder={"Jméno osoby " + (i + 2)} />
+                          <select value={g.sleep} onChange={(e) => setGuest(i, { sleep: e.target.value })} aria-label="Přespání">
+                            <option value="ano">Přespí</option>
+                            <option value="ne">Nepřespí</option>
+                          </select>
+                          <button type="button" className="pb-guest-x" aria-label="Odebrat osobu" onClick={() => removeGuest(i)}>×</button>
+                        </div>
+                      ))}
+                      {guests.length < 8 && <button type="button" className="pb-btn pb-btn-add" onClick={addGuest}>+ Přidat další osobu</button>}
+                    </div>
+                    </>)}
+                    <div className="field">
+                      <label>Chci hrát detektivku</label>
+                      <select value={rsvpGame} onChange={(e) => setRsvpGame(e.target.value)}>
+                        <option value="ano">Ano</option>
+                        <option value="ne">Ne, díky</option>
+                      </select>
+                    </div>
+                    {rsvpError && <p style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{rsvpError}</p>}
+                    <button type="submit" className="pb-btn solid" disabled={rsvpBusy}>
+                      {rsvpBusy ? "Chvilku…" : "Potvrdit účast"}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="pb-thanks">
+                    <p style={{ margin: "0 0 8px", fontWeight: 500 }}>Díky, {rsvpName}{guests.length > 0 ? ` a další (${guests.length})` : ""}!</p>
+                    <p style={{ margin: 0, fontSize: 14.5, color: "#6b6153" }}>
+                      {rsvpGame === "ano"
+                        ? "Vaše potvrzení účasti i herní účet jsou založené. Jakmile budou týmy a postavy hotové, přihlásíte se do hry stejným e-mailem na stránce Hra."
+                        : "Vaše potvrzení účasti je zaznamenané."}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {page === "hra" && !myPlayerId && (
+          <section className="block" style={{ paddingTop: 40 }}>
+            <div className="wrap">
+              <div className="case-bg">
+                <div className="case-card tilt-l">
+                  <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
+                  <p className="case-label">{authMode === "register" ? "nová registrace" : "ověření totožnosti"}</p>
+                  <h1 className="display" style={{ fontSize: "clamp(28px,5vw,40px)", margin: "0 0 14px" }}>
+                    {authMode === "register" ? "Zaregistrujte se" : "Přihlaste se"}
+                  </h1>
+                  <p className="lede" style={{ marginBottom: 24, fontSize: 14 }}>
+                    {authMode === "register"
+                      ? "Registrujte se sami za sebe — do týmů a rolí vás rozřadíme my, jakmile budeme vědět, kdo všechno bude hrát."
+                      : "Zadejte e-mail, se kterým jste se registrovali."}
+                    <span className="placeholder">obsah hry later</span>
+                  </p>
+
+                  <form onSubmit={authMode === "register" ? submitRegistration : submitLogin}
+                        style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {authMode === "register" && (
+                      <div className="field">
+                        <label>Jméno a příjmení</label>
+                        <input type="text" value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Jana Nováková" />
+                      </div>
+                    )}
+
+                    <div className="field">
+                      <label>E-mail</label>
+                      <input type="email" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="jana@example.cz" />
+                    </div>
+
+                    {formError && <p style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{formError}</p>}
+
+                    <button type="submit" className="btn" disabled={formBusy} style={{ alignSelf: "flex-start", marginTop: 4 }}>
+                      {formBusy ? "Chvilku…" : authMode === "register" ? "Registrovat se" : "Přihlásit se"}
+                    </button>
+                  </form>
+
+                  <button
+                    onClick={() => { setAuthMode(authMode === "register" ? "login" : "register"); setFormError(""); }}
+                    className="g-linkbtn" style={{ marginTop: 20 }}>
+                    {authMode === "register" ? "Už mám registraci, chci se přihlásit" : "Ještě nemám registraci"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {page === "hra" && myPlayerId && !myPlayer?.teamId && (
+          <section className="block" style={{ paddingTop: 40 }}>
+            <div className="wrap">
+              <div className="case-bg">
+                <div className="case-card tilt-r">
+                  <Pushpin tint={120} style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
+                  <p className="case-label">spis založen</p>
+                  <h3 className="display" style={{ fontSize: 26, margin: "0 0 14px" }}>{myPlayer?.name || "Díky!"}</h3>
+                  <p style={{ fontSize: 14.5, margin: "0 0 18px" }}>
+                    Zatím nemáte přiřazený tým — jakmile budou týmy a postavy hotové, uvidíte to tady rovnou, bez nutnosti se znovu přihlašovat.
+                  </p>
+                  <TagButton onClick={() => go("domaci-ukol")}>Otevřít domácí úkol</TagButton>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {page === "hra" && myPlayerId && myPlayer?.teamId && (
+          <section className="block">
+            <div className="wrap">
+              <p className="eyebrow">Spis týmu</p>
+              <h1 className="display">{myTeam?.name || "…"}</h1>
+              {weddingCountdown() && <p className="g-countdown">{weddingCountdown()}</p>}
+              <div className="case-card">
+                <EvidenceShelf items={evidence} onGoStation={(i) => go(`stanoviste/${i + 1}`)} />
+              </div>
+              <div className="case-card">
+                <h2 className="g-h2">Stanoviště</h2>
+                <ProgressStrip total={STATIONS.length} doneMap={stationsDoneMap} />
+                <div className="g-list">
+                  {STATIONS.map((s, i) => {
+                    const done = !!stationsDoneMap[i];
+                    return (
+                      <a key={s.id} href={`#/stanoviste/${i + 1}`} onClick={(e) => { e.preventDefault(); go(`stanoviste/${i + 1}`); }}
+                         className="case-station-row g-row">
+                        <span className="g-row-n">{i + 1}</span>
+                        <span className="g-row-main">
+                          <span className="g-row-title">{s.title || s.name}</span>
+                          <span className="g-row-sub">
+                            {done && s.evidence ? `Důkaz ${s.evidence.number}: ${s.evidence.summary}` : s.title ? s.name : "Obsah stanoviště připravujeme"}
+                          </span>
+                        </span>
+                        <span className={`g-status${done ? " done" : ""}`}>{done ? "Vyřešeno" : "Otevřít"}</span>
+                      </a>
+                    );
+                  })}
+                </div>
+                <a href="#/vysetrovani" onClick={(e) => { e.preventDefault(); go("vysetrovani"); }} className={`g-final${finalUnlocked ? " open" : ""}`}>
+                  <span className="g-row-title">Finální vyšetřování</span>
+                  <span className="g-status">{finalUnlocked ? "Otevřít" : `${stationsDoneCount} z ${FINAL_REQUIRES} indicií`}</span>
+                </a>
+                <div className="g-actions">
+                  <TagButton onClick={() => go("mapa")}>Otevřít mapu</TagButton>
+                  <TagButton variant="ghost" onClick={() => go("uvod")}>Jak hra funguje</TagButton>
+                </div>
+                <p style={{ fontSize: 13.5, marginTop: 18, marginBottom: 0 }}>
+                  Stanoviště můžete řešit v libovolném pořadí. Postup se sdílí živě mezi všemi telefony vašeho týmu.
+                </p>
+              </div>
+              <div className="case-card">
+                <TeamFeed team={myTeam} members={teamMembers} />
+                <InvestigatorLog team={myTeam} />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {page === "uvod" && myPlayerId && (
+          <section className="block" style={{ paddingTop: 40, position: "relative", overflow: "hidden" }}>
+            <div className="wrap" style={{ position: "relative" }}>
+              <div className="case-bg">
+                <div className="case-card" style={{ textAlign: "center" }}>
+                  <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
+                  <ConfidentialStamp style={{ marginBottom: 14 }} />
+                  <h1 className="display" style={{ fontSize: "clamp(30px,7vw,44px)", margin: "0 0 14px" }}>Vítejte ve hře</h1>
+                  <p className="lede" style={{ margin: "0 auto 24px" }}>
+                    Otevíráte spis, který ještě čeká na svůj případ. Až budeme mít scénář hotový, tady začne vaše pátrání.
+                    <span className="placeholder">obsah later</span>
+                  </p>
+                  <TagButton onClick={() => go("hra")}>Otevřít spis týmu</TagButton>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {page === "pripad" && myPlayerId && myTeam && (
+          <section className="block">
+            <div className="wrap">
+              <p className="eyebrow">Případ poslední vůle</p>
+              <h1 className="display">Podezřelí</h1>
+              <SuspectsBoard evidence={evidence} />
+            </div>
+          </section>
+        )}
+
+        {page === "mapa" && myTeam && (
+          <MapPage
+            stations={STATIONS}
+            stationsDoneMap={stationsDoneMap}
+            onGoOverview={() => go("hra")}
+            onGoStation={(i) => go(`stanoviste/${i + 1}`)}
+          />
+        )}
+
+        {page === "profil" && myPlayerId && (
+          <ProfilePage
+            player={myPlayer}
+            team={myTeam}
+            onSolveHomeClue={solveHomeClue}
+            onOpenHomeTask={() => go("domaci-ukol")}
+            onLogout={logout}
+          />
+        )}
+
+        {stationIndex !== null && (
+          <StationPage
+            stationIndex={stationIndex}
+            stations={STATIONS}
+            isDone={!!stationsDoneMap[stationIndex]}
+            onComplete={completeStation}
+            hintLevel={myTeam?.hintsOpened?.[stationIndex] || 0}
+            onOpenHint={openHint}
+            onGoOverview={() => go("hra")}
+            onGoMap={() => go("mapa")}
+            qrKey={stationQrKey}
+            canSave={!!myTeam?.id}
+          />
+        )}
+
+        {page === "vysetrovani" && myPlayerId && (
+          <section className="block">
+            <div className="wrap">
+              <p className="eyebrow">Případ poslední vůle</p>
+              <h1 className="display">Finální vyšetřování</h1>
+              {finalUnlocked || myTeam?.accusation || myTeam?.revealed ? (
+                <Accusation team={myTeam} evidence={evidence} onSeal={sealAccusation} teams={allTeams} />
+              ) : (
+                <div className="case-card">
+                  <ClueTag>Zamčeno</ClueTag>
+                  <p style={{ margin: "0 0 18px" }}>
+                    Finální vyšetřování se odemkne, až budete mít všech {FINAL_REQUIRES} indicií ze stanovišť.
+                  </p>
+                  <ProgressStrip total={STATIONS.length} doneMap={stationsDoneMap} />
+                </div>
+              )}
+              <div style={{ textAlign: "center" }}>
+                <TagButton variant="ghost" onClick={() => go("hra")} style={{ color: "#f3e9d2", boxShadow: "inset 0 0 0 1.5px rgba(243,233,210,.45)" }}>Spis týmu</TagButton>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <Suspense fallback={null}>
+          {page === "admin" && <AdminPage />}
+          {page === "ukoly" && <TasksPage />}
+          {page === "spravce-ukolu" && <TasksAdminPage />}
+        </Suspense>
+      </main>
+
+      {!isGameScreen && (
+      <>
+      <footer className="pb-foot">
+        <div className="wrap">
+          <p>
+            <strong style={{ color: "#221D16", fontWeight: 500 }}>Lukáš &amp; Tereza</strong><br />
+            {DATES.long} · <a href={VENUE.googleMaps} target="_blank" rel="noopener noreferrer">{VENUE.name}, {VENUE.region}</a>
+          </p>
+          <p>Svatba na Vysočině</p>
+        </div>
+      </footer>
+      </>
+      )}
+      </div>
+    </div>
+  );
+}

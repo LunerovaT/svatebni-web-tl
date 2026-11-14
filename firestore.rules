@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOrganizer() { return request.auth != null; }
+
+    // RSVP: kdokoli smí odeslat, číst a mazat smí jen přihlášený organizátor (jsou tam e-maily)
+    match /rsvps/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['name','contact','attending','wantsGame','sleep','sleepRank','travel','travelFrom','travelOther','arrival','arrivalOther','guests','createdAt'])
+                    && request.resource.data.name is string && request.resource.data.name.size() < 120
+                    && request.resource.data.contact is string && request.resource.data.contact.size() < 160
+                    && (!('guests' in request.resource.data) || (request.resource.data.guests is list && request.resource.data.guests.size() <= 8));
+      allow read, update, delete: if isOrganizer();
+    }
+
+    // Hráči: registrace a přihlášení e-mailem běží bez účtu, proto je čtení a úprava veřejná.
+    // Smazat hráče smí jen organizátor.
+    match /players/{id} {
+      allow read, create, update: if true;
+      allow delete: if isOrganizer();
+    }
+
+    // Týmy: hra průběžně zapisuje postup, ale zakládat a rušit týmy smí jen organizátor.
+    match /teams/{id} {
+      allow read, update: if true;
+      allow create, delete: if isOrganizer();
+    }
+
+    // Úkoly organizačního týmu: jen přihlášení
+    match /tasks/{id} {
+      allow read, write: if isOrganizer();
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
