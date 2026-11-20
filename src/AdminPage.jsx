@@ -6,6 +6,7 @@ import { db } from "./firebase.js";
 import OrganizerGate from "./admin/OrganizerGate.jsx";
 import { STATIONS } from "./stations/stations.js";
 import StationQr from "./admin/StationQr.jsx";
+import RsvpOverview from "./admin/RsvpOverview.jsx";
 
 
 const ROLES = [
@@ -36,7 +37,7 @@ function AdminInner() {
     return () => { unsubPlayers(); unsubTeams(); };
   }, []);
 
-  const unassigned = players.filter((p) => !p.teamId);
+  const unassigned = players.filter((p) => !p.teamId && p.wantsGame !== "ne");
   const assignedRoles = teams.map((t) => t.role).filter(Boolean);
 
   const toggleSelected = (id) => {
@@ -276,9 +277,19 @@ function AdminInner() {
 }
 
 export default function AdminPage() {
+  const [tab, setTab] = useState("odpovedi");
+  const tabBtn = (id, label) => (
+    <button key={id} type="button" onClick={() => setTab(id)}
+      style={{ fontFamily: "'IBM Plex Sans'", fontSize: 14, padding: "9px 18px", cursor: "pointer", border: "1px solid #221D16",
+        background: tab === id ? "#221D16" : "transparent", color: tab === id ? "#FBF9F5" : "#221D16" }}>{label}</button>
+  );
   return (
     <OrganizerGate label="jen pro vás" title="Administrace">
-      <AdminInner />
+      <div className="wrap" style={{ paddingTop: 24, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {tabBtn("odpovedi", "Odpovědi hostů")}
+        {tabBtn("hraci", "Hráči a týmy")}
+      </div>
+      {tab === "odpovedi" ? <RsvpOverview /> : <AdminInner />}
     </OrganizerGate>
   );
 }

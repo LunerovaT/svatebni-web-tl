@@ -1,8 +1,12 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import {
-  collection, addDoc, query, where, getDocs, doc, updateDoc, onSnapshot, serverTimestamp, deleteField, runTransaction,
+  collection, addDoc, setDoc, query, where, doc, updateDoc, onSnapshot, serverTimestamp, deleteField, runTransaction,
 } from "firebase/firestore";
-import { db } from "./firebase.js";
+import {
+  onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut,
+} from "firebase/auth";
+import { db, auth } from "./firebase.js";
+import { SLEEP_LABELS } from "./rsvpFields.js";
 import monogram from "./assets/monogram.webp";
 import cluster from "./assets/cluster.webp";
 import corner from "./assets/corner.webp";
@@ -41,17 +45,26 @@ import deskLamp from "./assets/ht/lamp.webp";
 import deskTag from "./assets/ht/tag.webp";
 import deskPostcard from "./assets/ht/postcard.webp";
 
-const SLEEP_LABELS = {
-  pokoj: "Nejlépe 1 celý pokoj",
-  sdileny: "Nevadí mi víc lidí v jednom pokoji",
-  stan: "Ve stanu / autě",
+const AUTH_ERR = {
+  "auth/invalid-credential": "Špatný e-mail nebo heslo.",
+  "auth/wrong-password": "Špatný e-mail nebo heslo.",
+  "auth/user-not-found": "Špatný e-mail nebo heslo.",
+  "auth/invalid-email": "Zkontrolujte prosím tvar e-mailu.",
+  "auth/weak-password": "Heslo musí mít aspoň 6 znaků.",
+  "auth/email-already-in-use": "Pro tenhle e-mail už účet existuje. Přihlaste se.",
+  "auth/too-many-requests": "Příliš mnoho pokusů, zkuste to prosím za chvíli.",
+  "auth/network-request-failed": "Chybí připojení k internetu.",
+  "auth/unauthorized-domain": "Tahle adresa webu není ve Firebase povolená (Authentication → Settings → Authorized domains).",
+  "auth/operation-not-allowed": "Přihlášení e-mailem není ve Firebase zapnuté (Authentication → Sign-in method).",
 };
+const authMsg = (e) => AUTH_ERR[e?.code] || `Něco se nepovedlo, zkuste to prosím znovu. (${e?.code || e?.message})`;
 
 const NAV_ITEMS = [
   { id: "home", label: "Domů" },
   { id: "kde", label: "Kdy a kde" },
   { id: "info", label: "Informace" },
   { id: "rsvp", label: "Potvrdit účast" },
+  { id: "profil", label: "Můj profil" },
   { id: "hra", label: "Hra" },
 ];
 
@@ -79,6 +92,7 @@ export default function WeddingSite() {
   // --- RSVP (sjednocené se založením herního účtu) ---
   const [rsvpName, setRsvpName] = useState("");
   const [rsvpEmail, setRsvpEmail] = useState("");
+  const [rsvpPw, setRsvpPw] = useState("");
   const [rsvpAttending, setRsvpAttending] = useState("ano");
   const [rsvpGame, setRsvpGame] = useState("ano");
   const [sleepWants, setSleepWants] = useState("ano");
@@ -99,12 +113,25 @@ export default function WeddingSite() {
   const submitRsvp = async (e) => {
     e.preventDefault();
     if (!rsvpName.trim()) { setRsvpError("Vyplňte prosím jméno."); return; }
-    if (!rsvpEmail.trim()) { setRsvpError("Vyplňte prosím e-mail — budete ho případně potřebovat i pro přihlášení do hry."); return; }
+    if (!rsvpEmail.trim()) { setRsvpError("Vyplňte prosím e-mail — přihlašujete se jím do svého profilu."); return; }
+    if (rsvpAttending === "ano" && rsvpPw.length < 6) { setRsvpError("Zvolte si prosím heslo k profilu (aspoň 6 znaků)."); return; }
     if (rsvpAttending === "ano" && guests.some((g) => !g.name.trim())) { setRsvpError("Doplňte prosím jména všech přidaných osob, nebo je odeberte."); return; }
     setRsvpError("");
     setRsvpBusy(true);
     try {
       const email = rsvpEmail.trim().toLowerCase();
+      let uid = null;
+      if (rsvpAttending === "ano") {
+        // účet (e-mail + heslo) = osobní profil se souhrnem; kdo už účet má, přihlásí se stejným heslem
+        try {
+          uid = (await createUserWithEmailAndPassword(auth, email, rsvpPw)).user.uid;
+        } catch (ex) {
+          if (ex.code === "auth/email-already-in-use") {
+            try { uid = (await signInWithEmailAndPassword(auth, email, rsvpPw)).user.uid; }
+            catch { setRsvpError("Pro tenhle e-mail už účet existuje. Zadejte své stávající heslo, nebo si ho obnovte v sekci Můj profil."); return; }
+          } else { setRsvpError(authMsg(ex)); return; }
+        }
+      }
       await addDoc(collection(db, "rsvps"), {
         name: rsvpName.trim(),
         contact: email,
@@ -121,18 +148,13 @@ export default function WeddingSite() {
         } : {}),
         createdAt: serverTimestamp(),
       });
-      if (rsvpGame === "ano") {
-        const existing = await getDocs(query(collection(db, "players"), where("contact", "==", email)));
-        if (existing.empty) {
-          await addDoc(collection(db, "players"), {
-            name: rsvpName.trim(),
-            contact: email,
-            teamId: null,
-            homeClueSolved: false,
-            createdAt: serverTimestamp(),
-          });
-        }
+      if (uid) {
+        // profil hosta; když už existuje (opakované odeslání), jen aktualizujeme volbu hry
+        const ref = doc(db, "players", uid);
+        try { await updateDoc(ref, { wantsGame: rsvpGame }); }
+        catch { await setDoc(ref, { name: rsvpName.trim(), contact: email, wantsGame: rsvpGame, teamId: null, homeClueSolved: false, createdAt: serverTimestamp() }); }
       }
+      setRsvpPw("");
       setRsvpDone(true);
     } catch (err) {
       setRsvpError("Něco se nepovedlo, zkuste to prosím znovu. (" + err.message + ")");
@@ -141,41 +163,43 @@ export default function WeddingSite() {
     }
   };
 
-  // --- registrace / přihlášení hráče (Firestore, kolekce "players" a "teams") ---
-  const [authMode, setAuthMode] = useState("register"); // "register" | "login"
+  // --- registrace / přihlášení hráče (Firebase Authentication e-mail + heslo; profil v kolekci "players", id = uid) ---
+  const [authMode, setAuthMode] = useState("login"); // "register" | "login"
   const [playerName, setPlayerName] = useState("");
   const [contact, setContact] = useState("");
+  const [password, setPassword] = useState("");
   const [formError, setFormError] = useState("");
+  const [formInfo, setFormInfo] = useState("");
   const [formBusy, setFormBusy] = useState(false);
 
-  const [myPlayerId, setMyPlayerId] = useState(null);
+  const [authUid, setAuthUid] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [playerChecked, setPlayerChecked] = useState(false);
   const [myPlayer, setMyPlayer] = useState(null); // živý dokument hráče (jméno, teamId, homeClueSolved...)
   const [myTeam, setMyTeam] = useState(null); // živá data týmu (postup, jméno, role, backstory)
+  const [myRsvp, setMyRsvp] = useState(undefined); // souhrn hosta (undefined = načítá se, null = žádná odpověď)
+  const myPlayerId = myPlayer ? myPlayer.id : null;
+  const authLoading = !authReady || (!!authUid && !playerChecked);
+
+  useEffect(() => onAuthStateChanged(auth, (u) => { setAuthUid(u ? u.uid : null); setPlayerChecked(false); setAuthReady(true); }), []);
 
   const submitRegistration = async (e) => {
     e.preventDefault();
     if (!playerName.trim()) { setFormError("Vyplňte prosím své jméno."); return; }
-    if (!contact.trim()) { setFormError("Vyplňte kontakt (e-mail)."); return; }
-    setFormError("");
+    if (!contact.trim()) { setFormError("Vyplňte e-mail."); return; }
+    if (password.length < 6) { setFormError("Heslo musí mít aspoň 6 znaků."); return; }
+    setFormError(""); setFormInfo("");
     setFormBusy(true);
     try {
       const email = contact.trim().toLowerCase();
-      const existing = await getDocs(query(collection(db, "players"), where("contact", "==", email)));
-      if (!existing.empty) {
-        setFormError("Tenhle e-mail už je zaregistrovaný — zkuste se místo toho přihlásit.");
-        setAuthMode("login");
-        return;
-      }
-      const ref = await addDoc(collection(db, "players"), {
-        name: playerName.trim(),
-        contact: email,
-        teamId: null,
-        homeClueSolved: false,
-        createdAt: serverTimestamp(),
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "players", cred.user.uid), {
+        name: playerName.trim(), contact: email, wantsGame: "ano", teamId: null, homeClueSolved: false, createdAt: serverTimestamp(),
       });
-      setMyPlayerId(ref.id);
+      setPassword("");
     } catch (err) {
-      setFormError("Registraci se nepodařilo uložit, zkuste to prosím znovu. (" + err.message + ")");
+      if (err.code === "auth/email-already-in-use") setAuthMode("login");
+      setFormError(authMsg(err));
     } finally {
       setFormBusy(false);
     }
@@ -183,43 +207,59 @@ export default function WeddingSite() {
 
   const submitLogin = async (e) => {
     e.preventDefault();
-    if (!contact.trim()) { setFormError("Zadejte e-mail, se kterým jste se registrovali."); return; }
-    setFormError("");
+    if (!contact.trim() || !password) { setFormError("Zadejte e-mail a heslo."); return; }
+    setFormError(""); setFormInfo("");
     setFormBusy(true);
     try {
-      const q = query(collection(db, "players"), where("contact", "==", contact.trim().toLowerCase()));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        setFormError("Tenhle e-mail nenacházíme mezi registracemi. Zkuste to prosím znovu, nebo se zaregistrujte výše.");
-        return;
-      }
-      setMyPlayerId(snap.docs[0].id);
+      await signInWithEmailAndPassword(auth, contact.trim().toLowerCase(), password);
+      setPassword("");
     } catch (err) {
-      setFormError("Něco se nepovedlo, zkuste to prosím znovu. (" + err.message + ")");
+      setFormError(authMsg(err));
     } finally {
       setFormBusy(false);
     }
   };
 
-  const logout = () => {
-    setMyPlayerId(null);
+  const resetPassword = async () => {
+    if (!contact.trim()) { setFormError("Napište nahoře e-mail a klikněte znovu."); return; }
+    setFormError(""); setFormInfo("");
+    try {
+      await sendPasswordResetEmail(auth, contact.trim().toLowerCase());
+      setFormInfo("Poslali jsme vám e-mail s odkazem na nové heslo (zkontrolujte i spam).");
+    } catch (err) { setFormError(authMsg(err)); }
+  };
+
+  const logout = async () => {
+    await signOut(auth);
     setMyPlayer(null);
     setMyTeam(null);
-    setPlayerName("");
-    setContact("");
-    setFormError("");
+    setMyRsvp(undefined);
+    setPlayerName(""); setContact(""); setPassword("");
+    setFormError(""); setFormInfo("");
     setAuthMode("login");
-    go("hra");
+    go("home");
   };
 
   // živý poslech na vlastní profil — jakmile admin přiřadí tým, appka to uvidí sama, bez nutnosti znovu se přihlásit
   useEffect(() => {
-    if (!myPlayerId) return;
-    const unsub = onSnapshot(doc(db, "players", myPlayerId), (snap) => {
-      if (snap.exists()) setMyPlayer({ id: snap.id, ...snap.data() });
-    }, (err) => console.warn("Profil se nepodařilo načíst:", err));
+    if (!authUid) { setMyPlayer(null); return; }
+    const unsub = onSnapshot(doc(db, "players", authUid), (snap) => {
+      setMyPlayer(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+      setPlayerChecked(true);
+    }, (err) => { console.warn("Profil se nepodařilo načíst:", err); setPlayerChecked(true); });
     return () => unsub();
-  }, [myPlayerId]);
+  }, [authUid]);
+
+  // moje odpověď z „Potvrdit účast“ + to, co jsme jí potvrdili (ubytování, jídlo…)
+  useEffect(() => {
+    const em = auth.currentUser?.email;
+    if (!authUid || !em) { setMyRsvp(undefined); return; }
+    const unsub = onSnapshot(query(collection(db, "rsvps"), where("contact", "==", em)), (snap) => {
+      const l = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      setMyRsvp(l.length ? { ...l[0], confirm: l.find((r) => r.confirm)?.confirm, guestNote: l.find((r) => r.guestNote)?.guestNote } : null);
+    }, (err) => { console.warn("Odpověď se nepodařilo načíst:", err); setMyRsvp(null); });
+    return () => unsub();
+  }, [authUid]);
 
   // živý poslech na tým, jakmile ho hráč má přiřazený — sdílené napříč telefony celého týmu
   useEffect(() => {
@@ -246,7 +286,7 @@ export default function WeddingSite() {
   const [allTeams, setAllTeams] = useState([]);
   useEffect(() => {
     if (page !== "vysetrovani" || !myTeam?.revealed) return;
-    const unsub = onSnapshot(collection(db, "teams"), (snap) => setAllTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
+    const unsub = onSnapshot(query(collection(db, "teams"), where("revealed", "==", true)), (snap) => setAllTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
     return () => unsub();
   }, [page, myTeam?.revealed]);
 
@@ -566,7 +606,7 @@ export default function WeddingSite() {
                     </div>
                     <div className="field">
                       <label>E-mail</label>
-                      <input type="email" value={rsvpEmail} onChange={(e) => setRsvpEmail(e.target.value)} placeholder="kvůli případnému přihlášení do hry" />
+                      <input type="email" value={rsvpEmail} onChange={(e) => setRsvpEmail(e.target.value)} placeholder="jana@example.cz" />
                     </div>
                     <div className="field">
                       <label>Zúčastním se</label>
@@ -633,6 +673,11 @@ export default function WeddingSite() {
                       ))}
                       {guests.length < 8 && <button type="button" className="pb-btn pb-btn-add" onClick={addGuest}>+ Přidat další osobu</button>}
                     </div>
+                    <div className="field">
+                      <label>Heslo k vašemu profilu</label>
+                      <input type="password" autoComplete="new-password" minLength={6} value={rsvpPw} onChange={(e) => setRsvpPw(e.target.value)} placeholder="aspoň 6 znaků" />
+                      <p className="pb-guests-note" style={{ marginTop: 6 }}>S e-mailem a heslem se pak přihlásíte do profilu: uvidíte tam svou odpověď a od nás potvrzené ubytování a jídlo. Heslo si zapamatujte.</p>
+                    </div>
                     </>)}
                     <div className="field">
                       <label>Chci hrát detektivku</label>
@@ -650,8 +695,8 @@ export default function WeddingSite() {
                   <div className="pb-thanks">
                     <p style={{ margin: "0 0 8px", fontWeight: 500 }}>Díky, {rsvpName}{guests.length > 0 ? ` a další (${guests.length})` : ""}!</p>
                     <p style={{ margin: 0, fontSize: 14.5, color: "#6b6153" }}>
-                      {rsvpGame === "ano"
-                        ? "Vaše potvrzení účasti i herní účet jsou založené. Jakmile budou týmy a postavy hotové, přihlásíte se do hry stejným e-mailem na stránce Hra."
+                      {rsvpAttending === "ano"
+                        ? "Vaše potvrzení účasti i profil jsou založené. V sekci Můj profil se přihlásíte e-mailem a heslem a uvidíte tam souhrn" + (rsvpGame === "ano" ? " i hru, jakmile budou týmy hotové." : ".")
                         : "Vaše potvrzení účasti je zaznamenané."}
                     </p>
                   </div>
@@ -661,20 +706,24 @@ export default function WeddingSite() {
           </section>
         )}
 
-        {page === "hra" && !myPlayerId && (
+        {(page === "hra" || page === "profil") && !myPlayerId && authLoading && (
+          <section className="block" style={{ paddingTop: 60 }}><div className="wrap"><p className="lede" style={{ textAlign: "center" }}>Chvilku…</p></div></section>
+        )}
+
+        {(page === "hra" || page === "profil") && !myPlayerId && !authLoading && (
           <section className="block" style={{ paddingTop: 40 }}>
             <div className="wrap">
               <div className="case-bg">
                 <div className="case-card tilt-l">
                   <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
-                  <p className="case-label">{authMode === "register" ? "nová registrace" : "ověření totožnosti"}</p>
+                  <p className="case-label">{authMode === "register" ? "nová registrace" : "přihlášení"}</p>
                   <h1 className="display" style={{ fontSize: "clamp(28px,5vw,40px)", margin: "0 0 14px" }}>
                     {authMode === "register" ? "Zaregistrujte se" : "Přihlaste se"}
                   </h1>
                   <p className="lede" style={{ marginBottom: 24, fontSize: 14 }}>
                     {authMode === "register"
-                      ? "Registrujte se sami za sebe — do týmů a rolí vás rozřadíme my, jakmile budeme vědět, kdo všechno bude hrát."
-                      : "Zadejte e-mail, se kterým jste se registrovali."}
+                      ? "Zvolte si e-mail a heslo. Do týmů a rolí vás rozřadíme my, jakmile budeme vědět, kdo všechno bude hrát."
+                      : "Přihlaste se e-mailem a heslem, které jste zadali při potvrzení účasti."}
                     <span className="placeholder">obsah hry later</span>
                   </p>
 
@@ -689,9 +738,15 @@ export default function WeddingSite() {
 
                     <div className="field">
                       <label>E-mail</label>
-                      <input type="email" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="jana@example.cz" />
+                      <input type="email" autoComplete="username" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="jana@example.cz" />
                     </div>
 
+                    <div className="field">
+                      <label>Heslo</label>
+                      <input type="password" autoComplete={authMode === "register" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={authMode === "register" ? "aspoň 6 znaků" : ""} />
+                    </div>
+
+                    {formInfo && <p style={{ color: "#3a5a3a", fontSize: 13.5, margin: 0 }}>{formInfo}</p>}
                     {formError && <p style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{formError}</p>}
 
                     <button type="submit" className="btn" disabled={formBusy} style={{ alignSelf: "flex-start", marginTop: 4 }}>
@@ -700,10 +755,13 @@ export default function WeddingSite() {
                   </form>
 
                   <button
-                    onClick={() => { setAuthMode(authMode === "register" ? "login" : "register"); setFormError(""); }}
+                    onClick={() => { setAuthMode(authMode === "register" ? "login" : "register"); setFormError(""); setFormInfo(""); }}
                     className="g-linkbtn" style={{ marginTop: 20 }}>
-                    {authMode === "register" ? "Už mám registraci, chci se přihlásit" : "Ještě nemám registraci"}
+                    {authMode === "register" ? "Už mám účet, chci se přihlásit" : "Ještě nemám účet"}
                   </button>
+                  {authMode === "login" && (
+                    <button onClick={resetPassword} className="g-linkbtn" style={{ marginTop: 10, display: "block" }}>Zapomněla/a jsem heslo</button>
+                  )}
                 </div>
               </div>
             </div>
@@ -820,6 +878,8 @@ export default function WeddingSite() {
           <ProfilePage
             player={myPlayer}
             team={myTeam}
+            rsvp={myRsvp}
+            onGoRsvp={() => go("rsvp")}
             onSolveHomeClue={solveHomeClue}
             onOpenHomeTask={() => go("domaci-ukol")}
             onLogout={logout}

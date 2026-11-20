@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth } from "../firebase.js";
+import { isOrganizerEmail } from "../organizers.js";
 
 // Přihlášení organizátorů přes Firebase Authentication (e-mail + heslo). Hesla nejsou v kódu.
 // Účty se zakládají v konzoli Firebase (Authentication → Users), viz README.
@@ -11,6 +12,7 @@ const ERR = {
   "auth/wrong-password": "Špatný e-mail nebo heslo.",
   "auth/too-many-requests": "Příliš mnoho pokusů. Zkuste to za chvíli.",
   "auth/network-request-failed": "Chybí připojení k internetu.",
+  "auth/unauthorized-domain": "Tahle adresa webu není ve Firebase povolená (Authentication → Settings → Authorized domains).",
   "auth/operation-not-allowed": "Přihlášení e-mailem není ve Firebase zapnuté (Authentication → Sign-in method).",
 };
 
@@ -46,6 +48,21 @@ export default function OrganizerGate({ label, title, children }) {
               {err && <p role="alert" style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{err}</p>}
               <button type="submit" className="btn" disabled={busy || !email || !pw} style={{ alignSelf: "flex-start" }}>{busy ? "Chvilku…" : "Vstoupit"}</button>
             </form>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!isOrganizerEmail(user.email)) {
+    return (
+      <section className="block" style={{ paddingTop: 56 }}>
+        <div className="wrap">
+          <div className="case-card" style={{ maxWidth: 440 }}>
+            <p className="case-label">{label}</p>
+            <h1 className="display" style={{ fontSize: 28, margin: "0 0 12px" }}>Sem má přístup jen organizátor</h1>
+            <p style={{ margin: "0 0 16px", fontSize: 14.5 }}>Jste přihlášeni jako {user.email}. Pro vstup se odhlaste a přihlaste e-mailem organizátora.</p>
+            <button type="button" className="btn" onClick={() => signOut(auth)}>Odhlásit</button>
           </div>
         </div>
       </section>

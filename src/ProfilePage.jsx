@@ -1,6 +1,8 @@
+import { Fragment } from "react";
 import { ClueTag, NoteBg, TagButton } from "./CaseFileBits.jsx";
+import { COLUMNS, CONFIRM_ITEMS, extraAnswers } from "./rsvpFields.js";
 
-export default function ProfilePage({ player, team, onOpenHomeTask, onLogout }) {
+export default function ProfilePage({ player, team, rsvp, onGoRsvp, onOpenHomeTask, onLogout }) {
   if (!player) {
     return (
       <section className="block">
@@ -15,6 +17,47 @@ export default function ProfilePage({ player, team, onOpenHomeTask, onLogout }) 
         <p className="eyebrow">Váš profil</p>
         <h1 className="display">{player.name}</h1>
 
+        <div className="case-card">
+          <ClueTag>Moje svatba</ClueTag>
+          {rsvp === undefined && <p style={{ margin: 0 }}>Načítám…</p>}
+          {rsvp === null && (
+            <>
+              <p style={{ margin: "0 0 14px" }}>Potvrzení účasti jsme od vás ještě nedostali.</p>
+              {onGoRsvp && <TagButton onClick={onGoRsvp}>Potvrdit účast</TagButton>}
+            </>
+          )}
+          {rsvp && (
+            <>
+              <dl className="g-dossier-fields" style={{ margin: "0 0 14px" }}>
+                {COLUMNS.filter((c) => c.key !== "guests" || rsvp.guests?.length).map((c) => {
+                  const v = c.get(rsvp);
+                  return v ? <Fragment key={c.key}><dt>{c.label.replace(" (pořadí preferencí)", "")}</dt><dd>{v}</dd></Fragment> : null;
+                })}
+                {extraAnswers(rsvp).map(([k, v]) => <Fragment key={k}><dt>{k}</dt><dd>{v}</dd></Fragment>)}
+              </dl>
+              {rsvp.attending === "ano" && (
+                <>
+                  <p className="case-label" style={{ margin: "6px 0 8px" }}>od nás potvrzeno</p>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {CONFIRM_ITEMS.map((it) => {
+                      const c = rsvp.confirm?.[it.key];
+                      return (
+                        <li key={it.key} style={{ marginBottom: 4 }}>
+                          <b>{it.label}:</b>{" "}
+                          {c?.ok ? <>potvrzeno ✓{c.text ? ` – ${c.text}` : ""}</> : "zatím čeká na potvrzení"}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+              {rsvp.guestNote && <NoteBg style={{ marginTop: 14 }}>{rsvp.guestNote}</NoteBg>}
+              <p style={{ margin: "14px 0 0", fontSize: 13, opacity: 0.75 }}>Něco se změnilo? Odešlete potvrzení účasti znovu se stejným e-mailem a heslem, nebo nám napište.</p>
+            </>
+          )}
+        </div>
+
+        {player.wantsGame === "ne" ? null : (<>
         <div className="case-card">
           <ClueTag>Osobní složka</ClueTag>
           <div className="g-dossier">
@@ -52,6 +95,8 @@ export default function ProfilePage({ player, team, onOpenHomeTask, onLogout }) 
             </>
           )}
         </div>
+
+        </>)}
 
         {onLogout && (
           <div style={{ textAlign: "center" }}>

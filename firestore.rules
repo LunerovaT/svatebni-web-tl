@@ -1,31 +1,56 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isOrganizer() { return request.auth != null; }
 
-    // RSVP: kdokoli smí odeslat, číst a mazat smí jen přihlášený organizátor (jsou tam e-maily)
+    // ORGANIZÁTOŘI: jen tyto e-maily (musí mít účet ve Firebase Authentication → Users).
+    // Stejný seznam je v src/organizers.js. Lukášův e-mail doplňte místo zástupného.
+    function isOrganizer() {
+      return request.auth != null
+        && request.auth.token.email in ['tereza.luner@gmail.com', 'DOPLNIT-LUKASUV-EMAIL@example.com'];
+    }
+    function signedIn() { return request.auth != null; }
+    // tým, ve kterém je přihlášený hráč
+    function myTeam() {
+      return get(/databases/$(database)/documents/players/$(request.auth.uid)).data.teamId;
+    }
+
+    // RSVP: odeslat smí kdokoli (i bez účtu), číst a upravovat jen organizátor;
+    // host smí číst jen svou vlastní odpověď (podle e-mailu, na který je účet).
     match /rsvps/{id} {
       allow create: if request.resource.data.keys().hasOnly(['name','contact','attending','wantsGame','sleep','sleepRank','travel','travelFrom','travelOther','arrival','arrivalOther','guests','createdAt'])
                     && request.resource.data.name is string && request.resource.data.name.size() < 120
                     && request.resource.data.contact is string && request.resource.data.contact.size() < 160
                     && (!('guests' in request.resource.data) || (request.resource.data.guests is list && request.resource.data.guests.size() <= 8));
-      allow read, update, delete: if isOrganizer();
+      allow read: if isOrganizer() || (signedIn() && resource.data.contact == request.auth.token.email);
+      allow update, delete: if isOrganizer();
     }
 
-    // Hráči: registrace a přihlášení e-mailem běží bez účtu, proto je čtení a úprava veřejná.
-    // Smazat hráče smí jen organizátor.
+    // Hráči/hosté: id dokumentu = uid přihlášeného účtu.
+    // Každý čte a upravuje jen svůj profil (kromě týmu a e-mailu); členové týmu se vidí navzájem.
     match /players/{id} {
-      allow read, create, update: if true;
+      allow read: if isOrganizer()
+                  || (signedIn() && (request.auth.uid == id
+                                     || (resource.data.teamId != null && resource.data.teamId == myTeam())));
+      allow create: if signedIn() && request.auth.uid == id
+                    && request.resource.data.keys().hasOnly(['name','contact','wantsGame','teamId','homeClueSolved','createdAt'])
+                    && request.resource.data.teamId == null
+                    && request.resource.data.contact == request.auth.token.email;
+      allow update: if isOrganizer()
+                    || (signedIn() && request.auth.uid == id
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['teamId','contact']));
       allow delete: if isOrganizer();
     }
 
-    // Týmy: hra průběžně zapisuje postup, ale zakládat a rušit týmy smí jen organizátor.
+    // Týmy: zakládá a ruší organizátor; členové týmu čtou a zapisují postup svého týmu;
+    // po odhalení výsledků (revealed) je smí číst každý přihlášený.
     match /teams/{id} {
-      allow read, update: if true;
+      allow read: if isOrganizer()
+                  || (signedIn() && (myTeam() == id || resource.data.revealed == true));
+      allow update: if isOrganizer() || (signedIn() && myTeam() == id);
       allow create, delete: if isOrganizer();
     }
 
-    // Úkoly organizačního týmu: jen přihlášení
+    // Úkoly organizačního týmu: jen organizátoři
     match /tasks/{id} {
       allow read, write: if isOrganizer();
     }
