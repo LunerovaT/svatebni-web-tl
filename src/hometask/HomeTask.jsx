@@ -383,7 +383,7 @@ function WheelDetail({ st, patch, snd, onSolve, setTools }) {
       setTimeout(onSolve, 1400);
     } else {
       setTried({ offset, text, ok: false });
-      setFb(SHIFT_FEEDBACK[offset] || "Tohle česky není. Zkuste jiný posun.");
+      setFb("Špatná odpověď.");
       setShake((n) => n + 1); patch({ attempts: st.attempts + 1 }); snd("wrong");
     }
   };

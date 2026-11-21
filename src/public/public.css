@@ -377,3 +377,6 @@ nav.links a.pb-nav-game:hover, nav.links a.pb-nav-game.active{ background:var(--
 
 .pb-root .pb-form textarea{ width:100%; box-sizing:border-box; min-height:84px; resize:vertical; background:#fff; border:1px solid var(--pb-line); border-radius:3px; padding:9px 10px; margin-top:4px; }
 .pb-root .pb-form textarea:focus{ border-color:var(--pb-btn); outline:none; }
+
+.pb-dress-figs{ max-width:540px; }
+@media (max-width:820px){ .pb-dress-figs{ max-width:100%; } }

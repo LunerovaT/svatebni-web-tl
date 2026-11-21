@@ -3,6 +3,7 @@ import cluster from "../assets/cluster.webp";
 import dressPhoto from "../assets/dresscode.webp";
 import dressPhoto2 from "../assets/dresscode2.webp";
 import dressPhoto3 from "../assets/dresscode3.webp";
+import dressPhoto4 from "../assets/dresscode4.webp";
 import corner from "../assets/corner.webp";
 import { VENUE, DATES } from "./venue.js";
 import { weddingCountdown } from "../game/CaseParts.jsx";
@@ -29,6 +30,37 @@ function Timeline() {
         <div className="pb-t"><div className="pb-t-time"><Soon>čas doplníme</Soon></div><div><h4>Hostina a večerní program</h4><p>Jídlo, pití, tanec a také malé pátrání pro ty, kdo budou chtít.</p></div></div>
         <div className="pb-t"><div className="pb-t-time"><b>ne 1. 8., 12:00</b></div><div><h4>Konec nájmu</h4><p>Areál musí být vyklizený. Kolem 10:00 se začneme balit a uklízet.</p></div></div>
       </div>
+  );
+}
+
+function DressSection() {
+  return (
+      <section className="pb-sec" id="dresscode">
+        <div className="wrap"><div className="pb-dress">
+          <div>
+            <p className="eyebrow">co na sebe</p>
+            <h2 className="display pb-h2">Dress code</h2>
+            <div className="pb-dress-figs">
+              <figure className="pb-dress-fig"><img src={dressPhoto} alt="Ilustrační foto: světlá košile, vesta, kšandy, motýlek a kšiltovka" loading="lazy" /></figure>
+              <figure className="pb-dress-fig"><img src={dressPhoto2} alt="Ilustrační foto: kilt s košilí a koženým sporranem" loading="lazy" /></figure>
+              <figure className="pb-dress-fig"><img src={dressPhoto4} alt="Ilustrační foto: pánský oblek s vestou a kravatou" loading="lazy" /></figure>
+            </div>
+            <figure className="pb-dress-lady">
+              <img src={dressPhoto3} alt="Ilustrační foto: dáma v dlouhých smaragdových šatech" loading="lazy" />
+              <figcaption className="pb-dress-lady-txt">cokoli, co není bílé</figcaption>
+            </figure>
+          </div>
+          <div className="pb-dress-text">
+            <p className="pb-dress-lead">Náš dress code je slavnostní, ale uvolněný. Chceme, abyste se cítili dobře a užili si den s námi, ne abyste se celý den trápili v saku nebo nepohodlných šatech.</p>
+            <p>Rádi vás uvidíme v elegantním oblečení, ale stejně tak uvítáme i něco méně tradičního. Ať už dorazíte v kiltu, kimonu (ano, Janusi, to je narážka na tebe 😁), originálních šatech nebo čemkoli jiném, co vás vystihuje a v čem se cítíte sami sebou.</p>
+            <p>Nebojte se dát svému outfitu vlastní charakter, trochu duše a originality. Právě to udělá náš den ještě pestřejším a osobnějším.</p>
+            <p className="pb-dress-heels"><b>Pro dámy:</b> nevolte prosím příliš vysoké podpatky, terén bude všelijaký. Bílou barvu šatů prosím nechte doma.</p>
+            <p className="pb-dress-end">Zkrátka – přijďte slavnostně, ale hlavně po svém! 💚</p>
+            <p className="pb-ps"><b>P. S.:</b> Uvolněný dress code má přece jen své hranice. Kdo dorazí v teplákovce, bude s láskou, ale nekompromisně odeslán domů se převléct. 😁</p>
+            <p className="pb-dress-cap pb-dress-cap2">Ilustrační fotky. Inspirace, žádná povinnost.</p>
+          </div>
+        </div></div>
+      </section>
   );
 }
 
@@ -68,7 +100,7 @@ export function HomePage({ go, choosePath, chosenPath, rsvpDone }) {
         <div className="wrap"><div className="pb-facts">
           <Fact k="Kdy" v={DATES.label} sub="Program dne" href="#/program" onClick={(e) => { e.preventDefault(); go("program"); }} />
           <Fact k="Kde" v={VENUE.name} sub={`${VENUE.street}, ${VENUE.region}`} href={VENUE.googleMaps} />
-          <Fact k="Dress code" v="Slavnostní, ale uvolněný" sub="Přijďte po svém" href="#/info" onClick={(e) => { e.preventDefault(); go("info"); setTimeout(() => document.getElementById("dresscode")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); }} />
+          <Fact k="Dress code" v="Slavnostní, ale uvolněný" sub="Přijďte po svém" href="#dresscode" onClick={(e) => { e.preventDefault(); document.getElementById("dresscode")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} />
         </div></div>
       </section>
 
@@ -96,6 +128,8 @@ export function HomePage({ go, choosePath, chosenPath, rsvpDone }) {
           </div>
         </div>
       </section>
+
+      <DressSection />
     </>
   );
 }
@@ -197,7 +231,7 @@ export function InfoPage() {
         <div className="wrap" style={{ position: "relative" }}>
           <p className="eyebrow">dobré vědět</p>
           <h1 className="display pb-h1s">Informace</h1>
-          <p className="lede">Doprava, ubytování, jídlo, dress code a odpovědi na časté dotazy.</p>
+          <p className="lede">Doprava, ubytování, jídlo a odpovědi na časté dotazy.</p>
         </div>
       </section>
 
@@ -239,31 +273,6 @@ export function InfoPage() {
         </div>
       </section>
 
-      <section className="pb-sec" id="dresscode">
-        <div className="wrap"><div className="pb-dress">
-          <div>
-            <p className="eyebrow">co na sebe</p>
-            <h2 className="display pb-h2">Dress code</h2>
-            <div className="pb-dress-figs">
-              <figure className="pb-dress-fig"><img src={dressPhoto} alt="Ilustrační foto: světlá košile, vesta, kšandy, motýlek a kšiltovka" loading="lazy" /></figure>
-              <figure className="pb-dress-fig"><img src={dressPhoto2} alt="Ilustrační foto: kilt s košilí a koženým sporranem" loading="lazy" /></figure>
-            </div>
-            <figure className="pb-dress-lady">
-              <img src={dressPhoto3} alt="Ilustrační foto: dáma v dlouhých smaragdových šatech" loading="lazy" />
-              <figcaption className="pb-dress-lady-txt">cokoli, co není bílé</figcaption>
-            </figure>
-          </div>
-          <div className="pb-dress-text">
-            <p className="pb-dress-lead">Náš dress code je slavnostní, ale uvolněný. Chceme, abyste se cítili dobře a užili si den s námi, ne abyste se celý den trápili v saku nebo nepohodlných šatech.</p>
-            <p>Rádi vás uvidíme v elegantním oblečení, ale stejně tak uvítáme i něco méně tradičního. Ať už dorazíte v kiltu, kimonu (ano, Janusi, to je narážka na tebe 😁), originálních šatech nebo čemkoli jiném, co vás vystihuje a v čem se cítíte sami sebou.</p>
-            <p>Nebojte se dát svému outfitu vlastní charakter, trochu duše a originality. Právě to udělá náš den ještě pestřejším a osobnějším.</p>
-            <p className="pb-dress-heels"><b>Pro dámy:</b> nevolte prosím příliš vysoké podpatky, terén bude všelijaký. Bílou barvu šatů prosím nechte doma.</p>
-            <p className="pb-dress-end">Zkrátka – přijďte slavnostně, ale hlavně po svém! 💚</p>
-            <p className="pb-ps"><b>P. S.:</b> Uvolněný dress code má přece jen své hranice. Kdo dorazí v teplákovce, bude s láskou, ale nekompromisně odeslán domů se převléct. 😁</p>
-            <p className="pb-dress-cap pb-dress-cap2">Ilustrační fotky. Inspirace, žádná povinnost.</p>
-          </div>
-        </div></div>
-      </section>
     </>
   );
 }
