@@ -89,7 +89,7 @@ export function HomePage({ go, choosePath, chosenPath }) {
             </div>
             <div className="pb-food-c">
               <h3>Pití</h3>
-              <p>Na místě bude pivo ze sudu, nealkoholické nápoje a omezené množství tvrdého alkoholu. Vlastní si přivézt můžete, a budeme rádi.</p>
+              <p>Na místě bude pivo ze sudu a nealko. Tvrdý alkohol bude v omezeném množství, určitě vás nezvládneme opít všechny, takže pokud máte větší spotřebu, určitě si přibalte nějakou lahev s sebou podle chuti :D 🍻</p>
             </div>
           </div>
           <p className="pb-food-note">Co konkrétně bude k jídlu, budeme teprve zveřejňovat. Dáme vám vědět.</p>
@@ -114,7 +114,7 @@ const FAQ = [
     "Pátek: Na páteční odpoledne a večer nezajišťujeme společné stravování. Pokud dorazíte už v pátek, vezměte si prosím vlastní jídlo podle toho, na co budete mít chuť.",
     "Sobota: O jídlo už bude postaráno! Pro všechny hosty bude připravený společný oběd a večer bohatý raut. Přes den mezi obědem a rautem není plánované další společné jídlo."]],
   ["Co pití a alkohol?", [
-    "Na místě bude pivo ze sudu, nealkoholické nápoje a omezené množství tvrdého alkoholu."]],
+    "Na místě bude pivo ze sudu a nealko. Tvrdý alkohol bude v omezeném množství, určitě vás nezvládneme opít všechny, takže pokud máte větší spotřebu, určitě si přibalte nějakou lahev s sebou podle chuti :D 🍻"]],
   ["Můžu si přivézt vlastní tvrdý alkohol?", [
     "ANO! A budeme jen rádi! 🥃 Přivezte si, co máte rádi, pijte, bavte se a užijte si oslavu podle svého gusta. Ať už máte chuť na whisky, rum, slivovici nebo něco úplně jiného, výběr i množství necháváme na vás. Hlavně ať je veselo! 😁"]],
   ["Co je na místě k dispozici?", [
