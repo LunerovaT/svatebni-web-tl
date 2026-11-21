@@ -1,15 +1,14 @@
 // Po vyřešení domácího úkolu: postupné představení pěti podezřelých (texty a portréty ze suspects.js), pak první indicie.
 import { SUSPECTS } from "./suspects.js";
-import lampa from "../assets/intro/lampa.webp";
 import margaret from "../assets/intro/margaret.webp";
-import desk from "../assets/intro/desk.webp";
 
-const BLUR = { bg: desk, pos: "50% 60%", zoom: 1.2 };
+// Celé představení běží na jednom pozadí (nenačítá se znovu), mění se jen text a portrét.
+const BLUR = { bg: margaret, pos: "50% 50%", zoom: 1.1 };
 
 export const SUSPECT_SCENES = [
-  { kicker: "Případ poslední vůle", bg: lampa, pos: "50% 50%", zoom: 1.1, lines: ["V domě té noci zůstalo pět lidí.", "Každý z nich měl k Eleanor blízko. A každý něco skrýval."] },
+  { kicker: "Případ poslední vůle", ...BLUR, lines: ["V domě té noci zůstalo pět lidí.", "Každý z nich měl k Eleanor blízko. A každý něco skrýval."] },
   ...SUSPECTS.map((s, i) => ({
-    ...(s.id === "margaret" ? { bg: margaret, pos: "50% 50%", zoom: 1.1 } : BLUR),
+    ...BLUR,
     kicker: `Podezřelý ${i + 1} z ${SUSPECTS.length}`,
     title: s.name,
     sub: s.relation,
