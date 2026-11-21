@@ -462,7 +462,7 @@ function RevealView({ rm, offset, onContinue }) {
 }
 
 // ---------------- spis ----------------
-function FileView({ st, onContinue, onDesk, onReset, onSuspects }) {
+function FileView({ st, onContinue, onDesk, onReset, onSuspects, showReset }) {
   return (
     <div className="ht-file">
       <div className="ht-casefile">
@@ -478,16 +478,16 @@ function FileView({ st, onContinue, onDesk, onReset, onSuspects }) {
       </div>
       <div className="ht-filebtns">
         <button className="ht-tagbtn" onClick={onContinue}>Pokračovat do hry</button>
-        <button className="ht-tagbtn alt" onClick={onSuspects}>Znovu představení podezřelých</button>
-        <button className="ht-tagbtn alt" onClick={onDesk}>Zpět na stůl</button>
+        <button className="ht-tagbtn alt" onClick={onSuspects}>Přehrát představení podezřelých</button>
+        <button className="ht-tagbtn alt" onClick={onDesk}>Vrátit se ke stolu</button>
       </div>
-      <button className="ht-linkbtn ht-reset" onClick={onReset}>začít úkol znovu (test)</button>
+      {showReset && <button className="ht-linkbtn ht-reset" onClick={onReset}>začít úkol znovu (test)</button>}
     </div>
   );
 }
 
 // =====================================================================
-export default function HomeTask({ alreadySolved = false, resetToken = null, onSolved, onExit, onContinue }) {
+export default function HomeTask({ showReset = false, alreadySolved = false, resetToken = null, onSolved, onExit, onContinue }) {
   const [st, setSt] = useState(() => load(alreadySolved));
   const patch = (p) => setSt((s) => ({ ...s, ...(typeof p === "function" ? p(s) : p) }));
   const rm = useReducedMotion();
@@ -562,7 +562,7 @@ export default function HomeTask({ alreadySolved = false, resetToken = null, onS
       {st.stage === "desk" && (
         <>
           <header className="ht-top">
-            <button className="ht-exit" onClick={onExit} aria-label="Opustit minihru a vrátit se do hry">Zpět do hry</button>
+            <button className="ht-exit" onClick={onExit} aria-label="Opustit domácí úkol a vrátit se do hry">Do hry</button>
             <div className="ht-title">
               <span className="ht-kicker">{STORY.caseName}</span>
               <h1>{STORY.title}</h1>
@@ -612,8 +612,8 @@ export default function HomeTask({ alreadySolved = false, resetToken = null, onS
       )}
 
       {st.stage === "reveal" && <RevealView rm={rm} offset={st.offset} onContinue={() => { snd("paper"); patch({ stage: "suspects" }); }} />}
-      {st.stage === "suspects" && <GameIntro scenes={SUSPECT_SCENES} onDone={() => patch({ stage: "file" })} />}
-      {st.stage === "file" && <FileView st={st} onContinue={onContinue} onDesk={() => patch({ stage: "desk", open: null })} onReset={reset} onSuspects={() => patch({ stage: "suspects" })} />}
+      {st.stage === "suspects" && <GameIntro scenes={SUSPECT_SCENES} finishLabel="Otevřít spis" onDone={() => patch({ stage: "file" })} />}
+      {st.stage === "file" && <FileView st={st} onContinue={onContinue} onDesk={() => patch({ stage: "desk", open: null })} onReset={reset} showReset={showReset} onSuspects={() => patch({ stage: "suspects" })} />}
       {st.intro && st.stage === "desk" && <IntroView rm={rm} onStart={() => { snd("paper"); patch({ intro: false }); }} />}
 
       <div className="ht-sr" aria-live="polite">{live}</div>

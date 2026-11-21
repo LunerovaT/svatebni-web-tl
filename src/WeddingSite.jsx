@@ -445,6 +445,7 @@ export default function WeddingSite() {
     return (
       <>
       <HomeTask
+        showReset={isTestMode()}
         alreadySolved={!!myPlayer?.homeClueSolved}
         resetToken={myPlayer?.homeTaskResetAt?.toMillis?.() ?? null}
         onSolved={solveHomeClue}
@@ -848,7 +849,7 @@ export default function WeddingSite() {
           </section>
         )}
 
-        {page === "hra" && myPlayerId && myPlayer?.wantsGame !== "ne" && !introSeen && <GameIntro onDone={finishIntro} />}
+        {page === "hra" && myPlayerId && myPlayer?.wantsGame !== "ne" && !introSeen && <GameIntro onDone={finishIntro} finishLabel="Do hry" />}
 
         {page === "hra" && myPlayerId && myPlayer?.wantsGame === "ne" && (
           <section className="block" style={{ paddingTop: 40 }}>
