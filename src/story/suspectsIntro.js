@@ -1,9 +1,9 @@
 // Po vyřešení domácího úkolu: postupné představení pěti podezřelých (texty a portréty ze suspects.js), pak první indicie.
 import { SUSPECTS } from "./suspects.js";
-import margaret from "../assets/intro/margaret.webp";
+import kufr from "../assets/intro/kufr.webp";
 
 // Celé představení běží na jednom pozadí (nenačítá se znovu), mění se jen text a portrét.
-const BLUR = { bg: margaret, pos: "50% 50%", zoom: 1.1 };
+const BLUR = { bg: kufr, pos: "50% 50%", zoom: 1.1 };
 
 export const SUSPECT_SCENES = [
   { kicker: "Případ poslední vůle", ...BLUR, lines: ["V domě té noci zůstalo pět lidí.", "Každý z nich měl k Eleanor blízko. A každý něco skrýval."] },
