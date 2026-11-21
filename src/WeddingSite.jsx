@@ -6,7 +6,7 @@ import {
   onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut,
 } from "firebase/auth";
 import { db, auth } from "./firebase.js";
-import { SLEEP_LABELS } from "./rsvpFields.js";
+import { SLEEP_OPTIONS } from "./rsvpFields.js";
 import monogram from "./assets/monogram.webp";
 import cluster from "./assets/cluster.webp";
 import corner from "./assets/corner.webp";
@@ -23,7 +23,7 @@ import photo1 from "./assets/photo1.webp";
 import photo2 from "./assets/photo2.webp";
 import tape from "./assets/tape.webp";
 import StationPage from "./StationPage.jsx";
-import { HomePage, WherePage, InfoPage } from "./public/PublicPages.jsx";
+import { HomePage, WherePage, ProgramPage, InfoPage } from "./public/PublicPages.jsx";
 import { VENUE, DATES } from "./public/venue.js";
 import "./public/public.css";
 const AdminPage = lazy(() => import("./AdminPage.jsx"));   // jen organizátoři – nezatěžuje hráče
@@ -62,12 +62,27 @@ const authMsg = (e) => AUTH_ERR[e?.code] || `Něco se nepovedlo, zkuste to pros�
 const NAV_ITEMS = [
   { id: "home", label: "Domů" },
   { id: "kde", label: "Kdy a kde" },
+  { id: "program", label: "Program" },
   { id: "info", label: "Informace" },
   { id: "rsvp", label: "Potvrdit účast" },
   { id: "profil", label: "Můj profil" },
   { id: "hra", label: "Hra" },
 ];
 
+
+// Zaškrtávací možnosti přespání (hlavní osoba i další osoby).
+function SleepChecks({ value, onChange }) {
+  const toggle = (k) => onChange(value.includes(k) ? value.filter((x) => x !== k) : [...value, k]);
+  return (
+    <div className="pb-checks">
+      {SLEEP_OPTIONS.map(([k, label]) => (
+        <label key={k}><input type="checkbox" checked={value.includes(k)} onChange={() => toggle(k)} /><span>{label}</span></label>
+      ))}
+    </div>
+  );
+}
+
+const newGuest = () => ({ name: "", arrival: "same", arrivalOther: "", sleep: "ano", sleepRank: [], travel: "same", travelFrom: "" });
 
 function useHashRoute() {
   const [page, setPage] = useState(() => location.hash.replace("#/", "") || "home");
@@ -96,14 +111,13 @@ export default function WeddingSite() {
   const [rsvpAttending, setRsvpAttending] = useState("ano");
   const [rsvpGame, setRsvpGame] = useState("ano");
   const [sleepWants, setSleepWants] = useState("ano");
-  const [sleepRank, setSleepRank] = useState(["pokoj", "sdileny", "stan"]);
+  const [sleepRank, setSleepRank] = useState([]); // zaškrtnuté možnosti přespání (v poli sleepRank kvůli pravidlům databáze)
   const [travel, setTravel] = useState("auto");
   const [travelFrom, setTravelFrom] = useState("");
   const [arrival, setArrival] = useState("patek");
   const [arrivalOther, setArrivalOther] = useState("");
-  const moveRank = (i, d) => setSleepRank((r) => { const n = [...r]; const j = i + d; if (j < 0 || j >= n.length) return r; [n[i], n[j]] = [n[j], n[i]]; return n; });
   const [guests, setGuests] = useState([]);
-  const addGuest = () => setGuests((g) => (g.length >= 8 ? g : [...g, { name: "", sleep: "ano" }]));
+  const addGuest = () => setGuests((g) => (g.length >= 8 ? g : [...g, newGuest()]));
   const setGuest = (i, patch) => setGuests((g) => g.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const removeGuest = (i) => setGuests((g) => g.filter((_, j) => j !== i));
   const [rsvpBusy, setRsvpBusy] = useState(false);
@@ -115,7 +129,10 @@ export default function WeddingSite() {
     if (!rsvpName.trim()) { setRsvpError("Vyplňte prosím jméno."); return; }
     if (!rsvpEmail.trim()) { setRsvpError("Vyplňte prosím e-mail — přihlašujete se jím do svého profilu."); return; }
     if (rsvpAttending === "ano" && rsvpPw.length < 6) { setRsvpError("Zvolte si prosím heslo k profilu (aspoň 6 znaků)."); return; }
+    if (rsvpAttending === "ano" && sleepWants === "ano" && sleepRank.length === 0) { setRsvpError("Zaškrtněte prosím aspoň jednu možnost přespání, nebo zvolte „Nechci přespat“."); return; }
     if (rsvpAttending === "ano" && guests.some((g) => !g.name.trim())) { setRsvpError("Doplňte prosím jména všech přidaných osob, nebo je odeberte."); return; }
+    const badGuest = rsvpAttending === "ano" ? guests.find((g) => g.sleep === "ano" && g.sleepRank.length === 0) : null;
+    if (badGuest) { setRsvpError(`U osoby ${badGuest.name.trim()} zaškrtněte aspoň jednu možnost přespání, nebo zvolte „Nepřespí“.`); return; }
     setRsvpError("");
     setRsvpBusy(true);
     try {
@@ -144,7 +161,15 @@ export default function WeddingSite() {
           travelFrom: travel === "odvoz" ? travelFrom.trim().slice(0, 120) : "",
           arrival,
           arrivalOther: arrival === "jindy" ? arrivalOther.trim().slice(0, 200) : "",
-          guests: guests.slice(0, 8).map((g) => ({ name: g.name.trim().slice(0, 120), sleep: g.sleep })),
+          guests: guests.slice(0, 8).map((g) => ({
+            name: g.name.trim().slice(0, 120),
+            arrival: g.arrival,
+            arrivalOther: g.arrival === "jindy" ? g.arrivalOther.trim().slice(0, 200) : "",
+            sleep: g.sleep,
+            sleepRank: g.sleep === "ano" ? g.sleepRank : [],
+            travel: g.travel,
+            travelFrom: g.travel === "odvoz" ? g.travelFrom.trim().slice(0, 120) : "",
+          })),
         } : {}),
         createdAt: serverTimestamp(),
       });
@@ -176,7 +201,7 @@ export default function WeddingSite() {
   const [authReady, setAuthReady] = useState(false);
   const [playerChecked, setPlayerChecked] = useState(false);
   const [myPlayer, setMyPlayer] = useState(null); // živý dokument hráče (jméno, teamId, homeClueSolved...)
-  const [myTeam, setMyTeam] = useState(null); // živá data týmu (postup, jméno, role, backstory)
+  const [myTeam, setMyTeam] = useState(null); // živá data týmu (postup, jméno)
   const [myRsvp, setMyRsvp] = useState(undefined); // souhrn hosta (undefined = načítá se, null = žádná odpověď)
   const myPlayerId = myPlayer ? myPlayer.id : null;
   const authLoading = !authReady || (!!authUid && !playerChecked);
@@ -220,6 +245,11 @@ export default function WeddingSite() {
     }
   };
 
+  const joinGame = async () => {
+    if (!authUid) return;
+    try { await updateDoc(doc(db, "players", authUid), { wantsGame: "ano" }); } catch (err) { console.warn(err); }
+  };
+
   const resetPassword = async () => {
     if (!contact.trim()) { setFormError("Napište nahoře e-mail a klikněte znovu."); return; }
     setFormError(""); setFormInfo("");
@@ -237,6 +267,8 @@ export default function WeddingSite() {
     setPlayerName(""); setContact(""); setPassword("");
     setFormError(""); setFormInfo("");
     setAuthMode("login");
+    setRsvpDone(false); setRsvpName(""); setRsvpEmail(""); setRsvpPw(""); setRsvpAttending("ano"); setRsvpGame("ano");
+    setSleepWants("ano"); setSleepRank([]); setTravel("auto"); setTravelFrom(""); setArrival("patek"); setArrivalOther(""); setGuests([]); setRsvpError("");
     go("home");
   };
 
@@ -378,7 +410,7 @@ export default function WeddingSite() {
       stationQrKey = k || sessionStorage.getItem(`qr_${stationIndex}`);
     } catch { stationQrKey = k; }
   }
-  const isGameScreen = page === "hra" || page === "uvod" || page === "pripad" || page === "profil" || page === "mapa" || page === "vysetrovani" || stationIndex !== null;
+  const isGameScreen = page === "hra" || page === "uvod" || page === "pripad" || page === "mapa" || page === "vysetrovani" || stationIndex !== null;
 
   const gameBackLabel = "⌂";
 
@@ -524,7 +556,6 @@ export default function WeddingSite() {
                 { id: "hra", label: "Spis", show: true, icon: <path d="M4 5h6l2 2h8v12H4z" /> },
                 { id: "mapa", label: "Mapa", show: !!myTeam, icon: <><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z" /><path d="M9 4v14M15 6v14" /></> },
                 { id: "pripad", label: "Příběh", show: !!myTeam, icon: <><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" /><path d="M9 9h6M9 13h6" /></> },
-                { id: "profil", label: "Profil", show: true, icon: <><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></> },
               ].filter((n) => n.show).map((n) => (
                 <a key={n.id} href={`#/${n.id}`} onClick={(e) => { e.preventDefault(); go(n.id); }}
                    className={page === n.id || (n.id === "mapa" && stationIndex !== null) ? "active" : ""}
@@ -588,6 +619,7 @@ export default function WeddingSite() {
         {page === "home" && <HomePage go={go} choosePath={choosePath} chosenPath={chosenPath} />}
         {page === "kde" && <WherePage />}
         {page === "info" && <InfoPage />}
+        {page === "program" && <ProgramPage />}
 
         {page === "rsvp" && (
           <section className="pb-sec" style={{ position: "relative", overflow: "hidden", paddingTop: 56 }}>
@@ -633,19 +665,9 @@ export default function WeddingSite() {
                       </select>
                     </div>
                     {sleepWants === "ano" && (
-                      <div className="field pb-rank">
-                        <label>Seřaďte podle preference (nahoře je nejlepší varianta)</label>
-                        <ol>
-                          {sleepRank.map((k, i) => (
-                            <li key={k}>
-                              <span>{SLEEP_LABELS[k]}</span>
-                              <span className="pb-rank-btns">
-                                <button type="button" aria-label="Posunout výš" disabled={i === 0} onClick={() => moveRank(i, -1)}>↑</button>
-                                <button type="button" aria-label="Posunout níž" disabled={i === sleepRank.length - 1} onClick={() => moveRank(i, 1)}>↓</button>
-                              </span>
-                            </li>
-                          ))}
-                        </ol>
+                      <div className="field">
+                        <label>Co vám vyhovuje? Zaškrtněte všechno, co platí.</label>
+                        <SleepChecks value={sleepRank} onChange={setSleepRank} />
                         <p className="pb-rank-note">Podle toho budeme přidělovat pokoje.</p>
                       </div>
                     )}
@@ -660,15 +682,46 @@ export default function WeddingSite() {
                     </div>
                     <div className="field pb-guests">
                       <label>Registruji i další osoby</label>
-                      <p className="pb-guests-note">Hodí se, když vyplňujete za celou skupinu (partner, děti, babička, teta…). Každý z nich bude mít v seznamu vlastní jméno.</p>
+                      <p className="pb-guests-note">Hodí se, když vyplňujete za celou skupinu (partner, děti, babička, teta…). Za každou osobu vyplníte stejné údaje jako za sebe, ať víme, jak se kdo k nám dostane a kde bude spát.</p>
                       {guests.map((g, i) => (
                         <div className="pb-guest" key={i}>
-                          <input type="text" maxLength={120} value={g.name} onChange={(e) => setGuest(i, { name: e.target.value })} placeholder={"Jméno osoby " + (i + 2)} />
-                          <select value={g.sleep} onChange={(e) => setGuest(i, { sleep: e.target.value })} aria-label="Přespání">
-                            <option value="ano">Přespí</option>
-                            <option value="ne">Nepřespí</option>
-                          </select>
-                          <button type="button" className="pb-guest-x" aria-label="Odebrat osobu" onClick={() => removeGuest(i)}>×</button>
+                          <div className="pb-guest-head">
+                            <input type="text" maxLength={120} value={g.name} onChange={(e) => setGuest(i, { name: e.target.value })} placeholder={"Jméno a příjmení osoby " + (i + 2)} />
+                            <button type="button" className="pb-guest-x" aria-label="Odebrat osobu" onClick={() => removeGuest(i)}>×</button>
+                          </div>
+                          <div className="pb-gf">
+                            <label>Kdy přijede</label>
+                            <select value={g.arrival} onChange={(e) => setGuest(i, { arrival: e.target.value })}>
+                              <option value="same">Stejně jako já</option>
+                              <option value="patek">Nejlépe v pátek</option>
+                              <option value="sobota">V sobotu ráno</option>
+                              <option value="jindy">Jindy</option>
+                            </select>
+                            {g.arrival === "jindy" && <input type="text" maxLength={200} value={g.arrivalOther} onChange={(e) => setGuest(i, { arrivalOther: e.target.value })} placeholder="Kdy zhruba?" />}
+                          </div>
+                          <div className="pb-gf">
+                            <label>Přespání</label>
+                            <select value={g.sleep} onChange={(e) => setGuest(i, { sleep: e.target.value })}>
+                              <option value="ano">Chce přespat</option>
+                              <option value="ne">Nepřespí</option>
+                            </select>
+                          </div>
+                          {g.sleep === "ano" && (
+                            <div className="pb-gf">
+                              <label>Co mu/jí vyhovuje? Zaškrtněte všechno, co platí.</label>
+                              <SleepChecks value={g.sleepRank} onChange={(v) => setGuest(i, { sleepRank: v })} />
+                            </div>
+                          )}
+                          <div className="pb-gf">
+                            <label>Doprava</label>
+                            <select value={g.travel} onChange={(e) => setGuest(i, { travel: e.target.value })}>
+                              <option value="same">Jede se mnou</option>
+                              <option value="auto">Dojede vlastním autem</option>
+                              <option value="odvoz">Potřebuje odvést</option>
+                              <option value="jinak">Jede jinak</option>
+                            </select>
+                            {g.travel === "odvoz" && <input type="text" maxLength={120} value={g.travelFrom} onChange={(e) => setGuest(i, { travelFrom: e.target.value })} placeholder="Odkud (město, zastávka)?" />}
+                          </div>
                         </div>
                       ))}
                       {guests.length < 8 && <button type="button" className="pb-btn pb-btn-add" onClick={addGuest}>+ Přidat další osobu</button>}
@@ -710,7 +763,31 @@ export default function WeddingSite() {
           <section className="block" style={{ paddingTop: 60 }}><div className="wrap"><p className="lede" style={{ textAlign: "center" }}>Chvilku…</p></div></section>
         )}
 
-        {(page === "hra" || page === "profil") && !myPlayerId && !authLoading && (
+        {page === "profil" && !myPlayerId && !authLoading && (
+          <section className="pb-sec" style={{ paddingTop: 56 }}>
+            <div className="wrap pb-login">
+              <h1 className="display pb-h1s">Můj profil</h1>
+              <p className="lede" style={{ marginBottom: 18 }}>Přihlaste se e-mailem a heslem, které jste zadali při potvrzení účasti. Uvidíte tam svou odpověď a od nás potvrzené ubytování a jídlo.</p>
+              <form onSubmit={submitLogin} className="pb-form">
+                <div className="field">
+                  <label>E-mail</label>
+                  <input type="email" autoComplete="username" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="jana@example.cz" />
+                </div>
+                <div className="field">
+                  <label>Heslo</label>
+                  <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                {formInfo && <p style={{ color: "#3a5a3a", fontSize: 13.5, margin: 0 }}>{formInfo}</p>}
+                {formError && <p style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{formError}</p>}
+                <button type="submit" className="pb-btn solid" disabled={formBusy}>{formBusy ? "Chvilku…" : "Přihlásit se"}</button>
+                <button type="button" className="pb-linkbtn" onClick={resetPassword}>Zapomněla/a jsem heslo</button>
+                <button type="button" className="pb-linkbtn" onClick={() => go("rsvp")}>Ještě jste nepotvrdili účast? Potvrdit účast</button>
+              </form>
+            </div>
+          </section>
+        )}
+
+        {page === "hra" && !myPlayerId && !authLoading && (
           <section className="block" style={{ paddingTop: 40 }}>
             <div className="wrap">
               <div className="case-bg">
@@ -768,7 +845,25 @@ export default function WeddingSite() {
           </section>
         )}
 
-        {page === "hra" && myPlayerId && !myPlayer?.teamId && (
+        {page === "hra" && myPlayerId && myPlayer?.wantsGame === "ne" && (
+          <section className="block" style={{ paddingTop: 40 }}>
+            <div className="wrap">
+              <div className="case-bg">
+                <div className="case-card tilt-r">
+                  <Pushpin tint={120} style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
+                  <p className="case-label">detektivní hra</p>
+                  <h3 className="display" style={{ fontSize: 26, margin: "0 0 14px" }}>{myPlayer?.name}</h3>
+                  <p style={{ fontSize: 14.5, margin: "0 0 18px" }}>
+                    Při potvrzení účasti jste zvolili, že hrát nechcete. Pokud jste si to rozmysleli, přidejte se. Do týmu vás zařadíme.
+                  </p>
+                  <TagButton onClick={joinGame}>Chci hrát</TagButton>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {page === "hra" && myPlayerId && myPlayer?.wantsGame !== "ne" && !myPlayer?.teamId && (
           <section className="block" style={{ paddingTop: 40 }}>
             <div className="wrap">
               <div className="case-bg">
@@ -777,7 +872,7 @@ export default function WeddingSite() {
                   <p className="case-label">spis založen</p>
                   <h3 className="display" style={{ fontSize: 26, margin: "0 0 14px" }}>{myPlayer?.name || "Díky!"}</h3>
                   <p style={{ fontSize: 14.5, margin: "0 0 18px" }}>
-                    Zatím nemáte přiřazený tým — jakmile budou týmy a postavy hotové, uvidíte to tady rovnou, bez nutnosti se znovu přihlašovat.
+                    Zatím nemáte přiřazený tým — jakmile budou týmy hotové, uvidíte to tady rovnou, bez nutnosti se znovu přihlašovat.
                   </p>
                   <TagButton onClick={() => go("domaci-ukol")}>Otevřít domácí úkol</TagButton>
                 </div>
@@ -786,7 +881,7 @@ export default function WeddingSite() {
           </section>
         )}
 
-        {page === "hra" && myPlayerId && myPlayer?.teamId && (
+        {page === "hra" && myPlayerId && myPlayer?.wantsGame !== "ne" && myPlayer?.teamId && (
           <section className="block">
             <div className="wrap">
               <p className="eyebrow">Spis týmu</p>
@@ -880,7 +975,8 @@ export default function WeddingSite() {
             team={myTeam}
             rsvp={myRsvp}
             onGoRsvp={() => go("rsvp")}
-            onSolveHomeClue={solveHomeClue}
+            onGoGame={() => go("hra")}
+            onJoinGame={joinGame}
             onOpenHomeTask={() => go("domaci-ukol")}
             onLogout={logout}
           />

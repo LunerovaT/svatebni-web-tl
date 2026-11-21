@@ -65,20 +65,38 @@ export function HomePage({ go, choosePath, chosenPath }) {
 
       <section className="pb-facts-wrap">
         <div className="wrap"><div className="pb-facts">
-          <Fact k="Kdy" v={DATES.label} sub="Přesný harmonogram doplníme" href="#/kde" onClick={(e) => { e.preventDefault(); go("kde"); }} />
+          <Fact k="Kdy" v={DATES.label} sub="Program dne" href="#/program" onClick={(e) => { e.preventDefault(); go("program"); }} />
           <Fact k="Kde" v={VENUE.name} sub={`${VENUE.street}, ${VENUE.region}`} href={VENUE.googleMaps} />
           <Fact k="Dress code" v="Slavnostní, ale uvolněný" sub="Přijďte po svém" href="#/info" onClick={(e) => { e.preventDefault(); go("info"); setTimeout(() => document.getElementById("dresscode")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); }} />
         </div></div>
       </section>
 
-      <section className="pb-paths">
+      <section className="pb-paths" id="jidlo">
         <img className="pb-paths-art" src={cluster} alt="" />
         <div className="wrap" style={{ position: "relative" }}>
           <div className="pb-paths-head">
-            <p className="eyebrow" style={{ color: "#c9a962" }}>program</p>
-            <h2 className="display">Jak bude vypadat den</h2>
+            <p className="eyebrow" style={{ color: "#c9a962" }}>jídlo a pití</p>
+            <h2 className="display">Jak to bude s jídlem</h2>
           </div>
-          <Timeline />
+          <div className="pb-food">
+            <div className="pb-food-c">
+              <h3>Pátek</h3>
+              <p>Na páteční odpoledne a večer společné stravování nezajišťujeme. Pokud dorazíte už v pátek, vezměte si prosím vlastní jídlo podle toho, na co budete mít chuť.</p>
+            </div>
+            <div className="pb-food-c">
+              <h3>Sobota</h3>
+              <p>O jídlo je postaráno. Pro všechny hosty bude připravený společný oběd a večer bohatý raut. Mezi obědem a rautem další společné jídlo plánované není.</p>
+            </div>
+            <div className="pb-food-c">
+              <h3>Pití</h3>
+              <p>Na místě bude pivo ze sudu, nealkoholické nápoje a omezené množství tvrdého alkoholu. Vlastní si přivézt můžete, a budeme rádi.</p>
+            </div>
+          </div>
+          <p className="pb-food-note">Co konkrétně bude k jídlu, budeme teprve zveřejňovat. Dáme vám vědět.</p>
+          <div className="pb-cta" style={{ marginTop: 22 }}>
+            <a className="pb-btn solid" href="#/program" onClick={(e) => { e.preventDefault(); go("program"); }}>Program dne</a>
+            <a className="pb-btn ghost" href="#/info" onClick={(e) => { e.preventDefault(); go("info"); }}>Všechny informace</a>
+          </div>
         </div>
       </section>
     </>
@@ -118,6 +136,26 @@ const FAQ = [
     "Čím dřív, tím líp! ❤️ Pomůže nám to s organizací, jídlem i plánováním celého víkendu."]],
 ];
 
+export function ProgramPage() {
+  return (
+    <>
+      <section className="pb-page-head">
+        <img className="pb-head-art" src={corner} alt="" />
+        <div className="wrap" style={{ position: "relative" }}>
+          <p className="eyebrow">{DATES.long}</p>
+          <h1 className="display pb-h1s">Program</h1>
+          <p className="lede">Jak bude vypadat víkend. Přesné časy doplníme, jakmile je budeme znát.</p>
+        </div>
+      </section>
+      <section className="pb-sec">
+        <div className="wrap">
+          <Timeline />
+        </div>
+      </section>
+    </>
+  );
+}
+
 export function WherePage() {
   return (
     <>
@@ -126,7 +164,7 @@ export function WherePage() {
         <div className="wrap" style={{ position: "relative" }}>
           <p className="eyebrow">praktické informace</p>
           <h1 className="display pb-h1s">Kdy a kde</h1>
-          <p className="lede">Kde to bude a jak bude vypadat den.</p>
+          <p className="lede">Kde to bude a kdy. Průběh dne najdete v sekci Program.</p>
         </div>
       </section>
 
@@ -150,13 +188,6 @@ export function WherePage() {
         </div></div>
       </section>
 
-      <section className="pb-sec">
-        <div className="wrap">
-          <p className="eyebrow">program</p>
-          <h2 className="display pb-h2">Jak bude vypadat den</h2>
-          <Timeline />
-        </div>
-      </section>
     </>
   );
 }

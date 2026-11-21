@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase.js";
-import { COLUMNS, CONFIRM_ITEMS, persons, extraAnswers, toMs, toCsv, SLEEP_SHORT, ARRIVAL_LABELS, TRAVEL_LABELS } from "../rsvpFields.js";
+import { COLUMNS, CONFIRM_ITEMS, persons, peopleOf, personLine, extraAnswers, toMs, toCsv, SLEEP_OPTIONS, SLEEP_SHORT } from "../rsvpFields.js";
 
 const th = { textAlign: "left", fontSize: 11.5, letterSpacing: ".06em", textTransform: "uppercase", color: "#6b6153", padding: "8px 10px", borderBottom: "1px solid rgba(0,0,0,.15)", whiteSpace: "nowrap", fontWeight: 500 };
 const td = { padding: "9px 10px", fontSize: 13.5, borderBottom: "1px solid rgba(0,0,0,.07)", verticalAlign: "top" };
@@ -22,10 +22,13 @@ function Detail({ r }) {
   const save = (patch) => updateDoc(doc(db, "rsvps", r.id), patch);
   return (
     <div style={{ background: "rgba(147,113,60,.06)", padding: "14px 16px" }}>
-      {r.guests?.length > 0 && (
-        <p style={{ margin: "0 0 12px", fontSize: 13.5 }}>
-          <b>Další osoby:</b> {r.guests.map((g) => `${g.name}${g.sleep === "ne" ? " (nepřespí)" : " (přespí)"}`).join(", ")}
-        </p>
+      {r.attending === "ano" && (
+        <div style={{ margin: "0 0 12px", fontSize: 13.5 }}>
+          <b>Osoby ({persons(r)}):</b>
+          <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+            {peopleOf(r).map((p, i) => <li key={i}>{personLine(p)}</li>)}
+          </ul>
+        </div>
       )}
       {extra.length > 0 && (
         <p style={{ margin: "0 0 12px", fontSize: 13.5 }}>
@@ -93,11 +96,12 @@ export default function RsvpOverview() {
   });
 
   const yes = rows.filter((r) => r.attending === "ano");
-  const people = yes.reduce((n, r) => n + persons(r), 0);
-  const sleepers = yes.reduce((n, r) => n + (r.sleep === "ne" ? 0 : 1) + (r.guests || []).filter((g) => g.sleep !== "ne").length, 0);
-  const firstPref = (k) => yes.filter((r) => r.sleep !== "ne" && (r.sleepRank?.[0] || "pokoj") === k).length;
-  const arrivalCount = (k) => yes.filter((r) => r.arrival === k).reduce((n, r) => n + persons(r), 0);
-  const travelCount = (k) => yes.filter((r) => r.travel === k).length;
+  const all = yes.flatMap(peopleOf); // všichni lidé včetně přidaných osob
+  const people = all.length;
+  const sleepers = all.filter((p) => p.sleep !== "ne");
+  const optCount = (k) => sleepers.filter((p) => (p.sleepRank || []).includes(k)).length;
+  const arrivalCount = (k) => all.filter((p) => p.arrival === k).length;
+  const travelCount = (k) => all.filter((p) => p.travel === k).length;
   const players_ = yes.filter((r) => r.wantsGame === "ano").length;
 
   const download = () => {
@@ -115,9 +119,9 @@ export default function RsvpOverview() {
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 22 }}>
           <Tile big={people} label="osob přijde" sub={`${yes.length} odpovědí ano · ${rows.length - yes.length} ne`} />
-          <Tile big={sleepers} label="osob chce přespat" sub={`1. volba: pokoj ${firstPref("pokoj")} · sdílený ${firstPref("sdileny")} · stan/auto ${firstPref("stan")}`} />
+          <Tile big={sleepers.length} label="osob chce přespat" sub={SLEEP_OPTIONS.map(([k]) => `${SLEEP_SHORT[k]} ${optCount(k)}`).join(" · ")} />
           <Tile big={arrivalCount("patek")} label="osob přijede v pátek" sub={`sobota ${arrivalCount("sobota")} · jindy ${arrivalCount("jindy")}`} />
-          <Tile big={travelCount("odvoz")} label="potřebuje odvoz" sub={`auto ${travelCount("auto")} · jinak ${travelCount("jinak")}`} />
+          <Tile big={travelCount("odvoz")} label="potřebuje odvoz" sub={`auto ${travelCount("auto")} · jinak ${travelCount("jinak")} (počítáno za osoby)`} />
           <Tile big={players_} label="chce hrát hru" />
         </div>
 

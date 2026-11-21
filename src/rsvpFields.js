@@ -4,29 +4,49 @@
 //   2) přidejte řádek do COLUMNS níž – objeví se v přehledu v administraci, v exportu CSV i v profilu hosta.
 //   (Pole, které tu chybí, se v administraci stejně zobrazí v sekci „Další odpovědi“.)
 
-export const SLEEP_LABELS = {
-  pokoj: "Nejlépe 1 celý pokoj",
-  sdileny: "Nevadí mi víc lidí v jednom pokoji",
-  stan: "Ve stanu / autě",
+// Možnosti přespání: host zaškrtne všechno, co mu vyhovuje (ukládá se do pole sleepRank).
+export const SLEEP_OPTIONS = [
+  ["pokoj", "Nejlépe 1 celý pokoj"],
+  ["sdileny", "Nevadí mi spát v místnosti s více lidmi"],
+  ["stan_nevadi", "Nevadí mi stan/auto, pokud nebude místo"],
+  ["stan_vlastni", "Preferuji svůj stan/auto"],
+  ["stul", "Ustelu si klidně pod stolem, když na to přijde :D"],
+];
+export const SLEEP_LABELS = { ...Object.fromEntries(SLEEP_OPTIONS), stan: "Ve stanu / autě" };
+export const SLEEP_SHORT = {
+  pokoj: "celý pokoj", sdileny: "sdílený pokoj", stan_nevadi: "stan/auto, když nebude místo",
+  stan_vlastni: "vlastní stan/auto", stul: "i pod stolem", stan: "stan / auto",
 };
-export const SLEEP_SHORT = { pokoj: "celý pokoj", sdileny: "sdílený pokoj", stan: "stan / auto" };
 export const ARRIVAL_LABELS = { patek: "V pátek", sobota: "V sobotu ráno", jindy: "Jindy" };
 export const TRAVEL_LABELS = { auto: "Autem", odvoz: "Potřebuje odvoz", jinak: "Jinak" };
 
+// Všichni lidé z jedné odpovědi (hlavní osoba + další osoby); „stejně jako já“ se dosadí z hlavní osoby.
+export const peopleOf = (r) => {
+  if (r.attending !== "ano") return [];
+  const main = { name: r.name, main: true, arrival: r.arrival, arrivalOther: r.arrivalOther, sleep: r.sleep, sleepRank: r.sleepRank || [], travel: r.travel, travelFrom: r.travelFrom };
+  const rest = (r.guests || []).map((g) => ({
+    name: g.name, main: false,
+    arrival: !g.arrival || g.arrival === "same" ? r.arrival : g.arrival,
+    arrivalOther: !g.arrival || g.arrival === "same" ? r.arrivalOther : g.arrivalOther,
+    sleep: g.sleep, sleepRank: g.sleepRank || [],
+    travel: !g.travel || g.travel === "same" ? r.travel : g.travel,
+    travelFrom: !g.travel || g.travel === "same" ? r.travelFrom : g.travelFrom,
+  }));
+  return [main, ...rest];
+};
+
 export const persons = (r) => (r.attending === "ano" ? 1 + (r.guests?.length || 0) : 0);
 
-export const sleepText = (r) => {
-  if (r.attending !== "ano") return "";
-  if (r.sleep === "ne") return "Nepřespí";
-  const rank = (r.sleepRank?.length ? r.sleepRank : []).map((k, i) => `${i + 1}. ${SLEEP_SHORT[k] || k}`).join(", ");
-  return rank || "Přespí";
-};
-export const arrivalText = (r) =>
-  r.attending !== "ano" ? "" : (ARRIVAL_LABELS[r.arrival] || r.arrival || "") + (r.arrival === "jindy" && r.arrivalOther ? `: ${r.arrivalOther}` : "");
-export const travelText = (r) =>
-  r.attending !== "ano" ? "" : (TRAVEL_LABELS[r.travel] || r.travel || "") + (r.travel === "odvoz" && r.travelFrom ? ` (${r.travelFrom})` : "");
-export const guestsText = (r) =>
-  (r.guests || []).map((g) => `${g.name}${g.sleep === "ne" ? " (nepřespí)" : ""}`).join("; ");
+const sleepOf = (p) => (p.sleep === "ne" ? "nepřespí" : (p.sleepRank || []).map((k) => SLEEP_SHORT[k] || k).join(" · ") || "přespí");
+const arrivalOf = (p) => (ARRIVAL_LABELS[p.arrival] || p.arrival || "") + (p.arrival === "jindy" && p.arrivalOther ? `: ${p.arrivalOther}` : "");
+const travelOf = (p) => (TRAVEL_LABELS[p.travel] || p.travel || "") + (p.travel === "odvoz" && p.travelFrom ? ` (${p.travelFrom})` : "");
+
+export const sleepText = (r) => (r.attending !== "ano" ? "" : sleepOf(peopleOf(r)[0]));
+export const arrivalText = (r) => (r.attending !== "ano" ? "" : arrivalOf(peopleOf(r)[0]));
+export const travelText = (r) => (r.attending !== "ano" ? "" : travelOf(peopleOf(r)[0]));
+// jedna osoba na řádek: „Teta Marie – příjezd V pátek; přespání: celý pokoj; doprava: Autem“
+export const personLine = (p) => `${p.name} – příjezd: ${arrivalOf(p)}; přespání: ${sleepOf(p)}; doprava: ${travelOf(p)}`;
+export const guestsText = (r) => peopleOf(r).slice(1).map(personLine).join(" | ");
 
 // sloupce přehledu / CSV / souhrnu v profilu
 export const COLUMNS = [

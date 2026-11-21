@@ -9,13 +9,6 @@ import StationQr from "./admin/StationQr.jsx";
 import RsvpOverview from "./admin/RsvpOverview.jsx";
 
 
-const ROLES = [
-  "Vrah",
-  "Jádro 1", "Jádro 2", "Jádro 3",
-  "Svědek 1", "Svědek 2", "Svědek 3", "Svědek 4", "Svědek 5",
-  "Rezerva",
-];
-
 function AdminInner() {
   const unlocked = true; // přihlášení řeší OrganizerGate
 
@@ -23,7 +16,6 @@ function AdminInner() {
   const [teams, setTeams] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [newTeamName, setNewTeamName] = useState("");
-  const [newTeamRole, setNewTeamRole] = useState("");
   const [joinTeamId, setJoinTeamId] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -38,7 +30,6 @@ function AdminInner() {
   }, []);
 
   const unassigned = players.filter((p) => !p.teamId && p.wantsGame !== "ne");
-  const assignedRoles = teams.map((t) => t.role).filter(Boolean);
 
   const toggleSelected = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -52,7 +43,6 @@ function AdminInner() {
       for (let i = 0; i < 8; i++) stationsDone[i] = false;
       const teamRef = await addDoc(collection(db, "teams"), {
         name: newTeamName.trim(),
-        role: newTeamRole,
         stationsDone,
         createdAt: serverTimestamp(),
       });
@@ -61,7 +51,6 @@ function AdminInner() {
       );
       setSelectedIds([]);
       setNewTeamName("");
-      setNewTeamRole("");
     } finally {
       setBusy(false);
     }
@@ -79,14 +68,6 @@ function AdminInner() {
     } finally {
       setBusy(false);
     }
-  };
-
-  const setTeamRole = async (teamId, role) => {
-    await updateDoc(doc(db, "teams", teamId), { role });
-  };
-
-  const setTeamBackstory = async (teamId, backstory) => {
-    await updateDoc(doc(db, "teams", teamId), { backstory });
   };
 
   // vrácení vyřešené úlohy (pro testování nebo opravu omylu)
@@ -165,18 +146,6 @@ function AdminInner() {
             <label>Název nového týmu</label>
             <input type="text" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} placeholder="např. Rodinné stříbro" />
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: 11.5, color: "#93713c", marginBottom: 4 }}>Postava</label>
-            <select value={newTeamRole} onChange={(e) => setNewTeamRole(e.target.value)}
-              style={{ fontFamily: "'IBM Plex Sans'", fontSize: 13.5, padding: "8px 10px", border: "1px solid rgba(0,0,0,0.15)", background: "#fff" }}>
-              <option value="">— zatím žádná —</option>
-              {ROLES.map((r) => (
-                <option key={r} value={r} disabled={assignedRoles.includes(r)}>
-                  {r}{assignedRoles.includes(r) ? " (obsazeno)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
           <button className="btn" disabled={busy || !newTeamName.trim() || selectedIds.length === 0} onClick={createTeam}>
             {busy ? "Chvilku…" : `Vytvořit tým z vybraných (${selectedIds.length})`}
           </button>
@@ -214,15 +183,6 @@ function AdminInner() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
                   <h4 className="display" style={{ fontSize: 20, margin: 0 }}>{t.name}{assists.length > 0 && <span style={{ fontSize: 13, fontFamily: "'IBM Plex Sans'", marginLeft: 10, opacity: 0.7 }}>odborná asistence: {assists.length}× ({assists.join(", ")})</span>}</h4>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <select value={t.role || ""} onChange={(e) => setTeamRole(t.id, e.target.value)}
-                      style={{ fontFamily: "'IBM Plex Sans'", fontSize: 13.5, padding: "6px 8px", border: "1px solid rgba(0,0,0,0.15)", background: "#fff" }}>
-                      <option value="">— nepřiřazeno —</option>
-                      {ROLES.map((r) => (
-                        <option key={r} value={r} disabled={assignedRoles.includes(r) && t.role !== r}>
-                          {r}{assignedRoles.includes(r) && t.role !== r ? " (obsazeno)" : ""}
-                        </option>
-                      ))}
-                    </select>
                     <button onClick={() => dissolveTeam(t.id)} style={{ border: "none", background: "none", color: "#a8604f", fontSize: 13, cursor: "pointer" }}>
                       zrušit tým
                     </button>
@@ -257,16 +217,6 @@ function AdminInner() {
                     </div>
                   ))}
                 </div>
-                <textarea
-                  value={t.backstory || ""}
-                  onChange={(e) => setTeamBackstory(t.id, e.target.value)}
-                  placeholder="Krátký backstory k této postavě (uvidí ho hráči na svém profilu)"
-                  rows={2}
-                  style={{
-                    width: "100%", marginTop: 10, fontFamily: "'IBM Plex Sans'", fontSize: 13.5,
-                    padding: "8px 10px", border: "1px solid rgba(0,0,0,0.12)", resize: "vertical",
-                  }}
-                />
               </div>
             );
           })}
