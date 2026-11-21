@@ -268,6 +268,7 @@ function DocDetail({ doc, st, patch, snd, say, setTools }) {
   const zp = useZoomPan(!lampOn);
 
   useEffect(() => { visited.current = {}; setNote(""); }, [side, lampOn]);
+  useEffect(() => { if (!designated && lampOn) setLampOn(false); }, [designated, lampOn]);
 
   // sledování, kolik plochy hráč prosvítil (aby „nic tu není“ nezaznělo předčasně)
   const visit = (x, y) => {
@@ -302,18 +303,27 @@ function DocDetail({ doc, st, patch, snd, say, setTools }) {
                 aria-label={isBook ? (side === "front" ? "Otevřít knížku" : "Zavřít knížku") : "Otočit doklad"}>
           {Icon.flip}<span>{isBook ? (side === "front" ? "Otevřít" : "Zavřít") : "Otočit"}</span>
         </button>
-        <button className={`ht-round${designated ? " is-on" : ""}`} onClick={() => { snd("tick"); patch({ designated: designated ? null : doc.id }); if (designated) setLampOn(false); }}
+        <button className={`ht-round${designated ? " is-on" : ""}`} onClick={() => {
+                  snd("tick");
+                  if (designated) { patch({ designated: null }); setLampOn(false); setNote(""); return; }
+                  const prev = st.designated && DOCS.find((d) => d.id === st.designated);
+                  patch({ designated: doc.id });
+                  setNote(prev ? `Označení přesunuto: Eleanořin je teď tenhle doklad, ne „${prev.title}“.` : "");
+                }}
                 aria-pressed={designated} aria-label={designated ? "Zrušit označení" : "Označit jako Eleanořin doklad"}>
           {Icon.mark}<span>{designated ? "Označeno" : "Je Eleanořin"}</span>
         </button>
-        <button className={`ht-round${lampOn ? " is-on" : ""}`} disabled={!designated}
-                onClick={() => { snd("lamp"); setLampOn((l) => !l); }} aria-pressed={lampOn} aria-label="Posvítit lampou">
+        <button className={`ht-round${lampOn ? " is-on" : ""}${designated ? "" : " is-locked"}`} aria-disabled={!designated}
+                onClick={() => {
+                  if (!designated) { snd("wrong"); setLampOn(false); setNote(STORY.msg.lampNeedsDesignation); return; }
+                  snd("lamp"); setLampOn((l) => !l);
+                }} aria-pressed={lampOn} aria-label="Posvítit lampou">
           {Icon.bulb}<span>Lampa</span>
         </button>
         {!lampOn && <button className="ht-round" onClick={() => zp.setZoom(zp.z === ZOOMS.length - 1 ? 0 : zp.z + 1)} aria-label="Přiblížit">{Icon.plus}<span>{zp.z ? "×" + ZOOMS[zp.z] : "Přiblížit"}</span></button>}
       </>
     );
-  }, [side, designated, lampOn, zp.z]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [side, designated, st.designated, lampOn, zp.z]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const img = side === "front" ? doc.front : (isBook ? doc.inside : doc.back);
   const inkVisible = inkHere && (st.inkFound || lampOn);

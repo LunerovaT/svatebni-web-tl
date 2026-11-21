@@ -334,7 +334,7 @@
 .gh-tile.locked{ opacity:.55; cursor:default; }
 .gh-tile b{ font:400 17px/1.2 var(--g-head, 'Cormorant Garamond', serif); }
 .gh-tile span{ font-size:12.5px; line-height:1.35; }
-.gi-img{ display:block; margin:0 auto 18px; max-height:34vh; max-width:70vw; border:6px solid #e8dcc0; border-bottom-width:14px; box-shadow:0 10px 30px rgba(0,0,0,.6); transform:rotate(-1.5deg); animation:gi-in 1.2s ease both; }
+.gi-img{ display:block; margin:0 auto 18px; max-height:34vh; max-width:70vw; filter:drop-shadow(0 10px 24px rgba(0,0,0,.6)); animation:gi-in 1.2s ease both; }
 .gi-title{ font:500 clamp(28px,5vw,38px)/1.1 'Cormorant Garamond', serif; margin:0; color:#f4e6bd; animation:gi-in 1.2s ease both; }
 .gi-sub{ font:500 12px/1 'IBM Plex Sans', sans-serif; letter-spacing:.2em; text-transform:uppercase; color:#b98f4a; margin:8px 0 6px; animation:gi-in 1.2s ease both; }
 .gi-scene .gi-line{ font-size:clamp(19px,3.4vw,25px); }
