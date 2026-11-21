@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "firebase/auth";
 import { auth } from "../firebase.js";
 import { isOrganizerEmail } from "../organizers.js";
 
@@ -22,6 +22,7 @@ export default function OrganizerGate({ label, title, children }) {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState("");
 
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);
 
@@ -31,6 +32,13 @@ export default function OrganizerGate({ label, title, children }) {
     try { await signInWithEmailAndPassword(auth, email.trim(), pw); setPw(""); }
     catch (x) { setErr(ERR[x.code] || "Přihlášení se nepovedlo. (" + (x.code || x.message) + ")"); }
     finally { setBusy(false); }
+  };
+
+  const reset = async () => {
+    setErr(""); setInfo("");
+    if (!email.trim()) { setErr("Napište nahoře e-mail a klikněte znovu."); return; }
+    try { await sendPasswordResetEmail(auth, email.trim()); setInfo("Poslali jsme e-mail s odkazem na nové heslo (zkontrolujte i spam)."); }
+    catch (x) { setErr(ERR[x.code] || "Odeslání se nepovedlo. (" + (x.code || x.message) + ")"); }
   };
 
   if (user === undefined) return <section className="block"><div className="wrap"><p style={{ color: "#6b6153" }}>Chvilku…</p></div></section>;
@@ -45,8 +53,10 @@ export default function OrganizerGate({ label, title, children }) {
             <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div className="field"><label htmlFor="og-mail">E-mail</label><input id="og-mail" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus /></div>
               <div className="field"><label htmlFor="og-pw">Heslo</label><input id="og-pw" type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} /></div>
+              {info && <p style={{ color: "#3a5a3a", fontSize: 13.5, margin: 0 }}>{info}</p>}
               {err && <p role="alert" style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{err}</p>}
               <button type="submit" className="btn" disabled={busy || !email || !pw} style={{ alignSelf: "flex-start" }}>{busy ? "Chvilku…" : "Vstoupit"}</button>
+              <button type="button" onClick={reset} style={{ alignSelf: "flex-start", background: "none", border: 0, padding: 0, color: "#6b6153", textDecoration: "underline", cursor: "pointer", font: "inherit", fontSize: 13.5 }}>Zapomněli jste heslo?</button>
             </form>
           </div>
         </div>

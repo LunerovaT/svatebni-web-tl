@@ -89,6 +89,13 @@ export function HomePage({ go, choosePath, chosenPath, rsvpDone }) {
               <p>Na místě bude pivo ze sudu a nealko. Tvrdý alkohol bude v omezeném množství, určitě vás nezvládneme opít všechny, takže pokud máte větší spotřebu, určitě si přibalte nějakou lahev s sebou podle chuti :D 🍻</p>
             </div>
           </div>
+          <div className="pb-food" style={{ gridTemplateColumns: "1fr", marginTop: 16 }}>
+            <div className="pb-food-c">
+              <h3>Bude bazén?</h3>
+              <p>Pokud všechno klapne podle plánu, bude k dispozici i bazén! 🏊</p>
+              <p style={{ marginTop: 8 }}>Plavky si určitě přibalte (nebo je po 22. hodině klidně nechte v tašce 😁). Každopádně věříme, že se vykoupat půjde.</p>
+            </div>
+          </div>
           <p className="pb-food-note">Co konkrétně bude k jídlu, budeme teprve zveřejňovat. Dáme vám vědět.</p>
           <div className="pb-cta" style={{ marginTop: 22 }}>
             <a className="pb-btn solid" href="#/program" onClick={(e) => { e.preventDefault(); go("program"); }}>Program dne</a>
