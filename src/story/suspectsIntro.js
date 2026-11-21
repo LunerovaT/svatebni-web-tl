@@ -10,5 +10,5 @@ export const SUSPECT_SCENES = [
     image: s.portrait,
     lines: [s.about],
   })),
-  { kicker: "První indicie", lines: ["Pět podezřelých.", "Eleanor věděla, že mezi nimi sedí někdo, koho nezvala."] },
+  { kicker: "První indicie", lines: ["Pět podezřelých.", "Jeden z pěti nebyl pozván."] },
 ];

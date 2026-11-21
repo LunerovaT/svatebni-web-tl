@@ -104,5 +104,5 @@ export const STORY = {
     nextTask: "Ověřit seznam hostů a časovou osu událostí.",
     closing: ["VYŠETŘOVÁNÍ", "POKRAČUJE", "NA SVATBĚ"],
   },
-  revealAfter: "Eleanor věděla, že mezi pěti hosty sedí někdo, koho nezvala.",
+  revealAfter: "",
 };

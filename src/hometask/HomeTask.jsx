@@ -396,14 +396,21 @@ function WheelDetail({ st, patch, snd, onSolve, setTools }) {
         ) : (
           <div className="ht-notebook">
             <p className="ht-nb-ink">„{INK.line}“</p>
-            <p className="ht-nb-lab">Zašifrovaná zpráva</p>
-            <p className="ht-cipherline">{CIPHERTEXT}</p>
-            {tried && (
-              <>
-                <p className="ht-nb-lab">{tried.ok ? "Správný posun" : "Výsledek"} {tried.offset}</p>
-                <p className={`ht-resultline ${tried.ok ? "ok" : "bad"}`} aria-live="polite">{tried.text}</p>
-              </>
-            )}
+            <div className="ht-strip">
+              {(() => { let idx = 0; return CIPHER_WORDS.map((w, wi) => (
+                <div className="ht-word" key={wi}>
+                  {[...w].map((c) => {
+                    const i = idx++;
+                    const ch = tried ? decodeLetter(c, tried.offset) : " ";
+                    return (
+                      <div key={i} className={`ht-cell${tried?.ok ? " ok" : ""}`} aria-label={`Písmeno šifry ${c}, pozice ${i + 1}. ${tried ? `Přepsáno jako ${ch}.` : "Zatím nepřepsáno."}`}>
+                        <span className="c">{c}</span><span className="p">{ch}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )); })()}
+            </div>
             <div key={shake} className={`ht-fb${shake ? " shake" : ""}`} role="status">{fb}</div>
             <div className="ht-checkrow">
               <button className="ht-tagbtn" disabled={tried?.ok} onClick={submit}>Zadat posun {st.offset}</button>
@@ -438,7 +445,7 @@ function RevealView({ rm, offset, onContinue }) {
           </span>
         ))}
       </h2>
-      {ready && <p className="ht-reveal-after ht-fadein">{STORY.revealAfter}</p>}
+      {ready && STORY.revealAfter && <p className="ht-reveal-after ht-fadein">{STORY.revealAfter}</p>}
       {ready && <button className="ht-tagbtn ht-fadein" onClick={onContinue}>Pokračovat</button>}
     </div>
   );

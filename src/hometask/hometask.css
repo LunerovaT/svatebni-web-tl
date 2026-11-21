@@ -316,3 +316,4 @@
 .ht-cipherline,.ht-resultline{margin:2px 0 6px;font:600 clamp(17px,2.4vw,22px)/1.5 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.08em;word-spacing:.5em;color:#f0dfb2;word-break:break-word}
 .ht-resultline.bad{color:#d98a7c}
 .ht-resultline.ok{color:#9fd49a}
+.ht-cell.ok .p{color:#2f6b2f;border-bottom-color:#2f6b2f}
