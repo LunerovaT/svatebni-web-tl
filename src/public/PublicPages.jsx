@@ -100,7 +100,7 @@ export function HomePage({ go, choosePath, chosenPath, rsvpDone }) {
   );
 }
 
-const TOP_Q = ["Jak to bude s jídlem?", "Co pití a alkohol?", "Můžu si přivézt vlastní tvrdý alkohol?", "Bude bazén?"];
+const TOP_Q = ["Jak to bude s jídlem?", "Co pití a alkohol?", "Bude bazén?"];
 const FAQ = [
   ["Je pozvánka automaticky i pro +1?", [
     "Rádi bychom vás pozvali úplně všechny i s vašimi nejbližšími, ale kapacita areálu má své limity. ❤️ Proto jsme každému společně s pozvánkou dali vědět, s kolika osobami počítáme. Pokud si nejste jistí, klidně nám napište a společně to vyřešíme."]],
@@ -111,9 +111,9 @@ const FAQ = [
     "Pátek: Na páteční odpoledne a večer nezajišťujeme společné stravování. Pokud dorazíte už v pátek, vezměte si prosím vlastní jídlo podle toho, na co budete mít chuť.",
     "Sobota: O jídlo už bude postaráno! Pro všechny hosty bude připravený společný oběd a večer bohatý raut. Přes den mezi obědem a rautem není plánované další společné jídlo."]],
   ["Co pití a alkohol?", [
-    "Na místě bude pivo ze sudu a nealko. Tvrdý alkohol bude v omezeném množství, určitě vás nezvládneme opít všechny, takže pokud máte větší spotřebu, určitě si přibalte nějakou lahev s sebou podle chuti :D 🍻"]],
-  ["Můžu si přivézt vlastní tvrdý alkohol?", [
-    "ANO! A budeme jen rádi! 🥃 Přivezte si, co máte rádi, pijte, bavte se a užijte si oslavu podle svého gusta. Ať už máte chuť na whisky, rum, slivovici nebo něco úplně jiného, výběr i množství necháváme na vás. Hlavně ať je veselo! 😁"]],
+    "Na místě bude pivo ze sudu a nealko. Tvrdý alkohol bude v omezeném množství, určitě vás nezvládneme opít všechny.",
+    { b: "Takže můžu si přivézt vlastní tvrdý alkohol?" },
+    "ANO! A budeme jen rádi! 🥃 Přivezte si, co máte rádi, pijte, bavte se a užijte si oslavu podle svého gusta. 🍻"]],
   ["Co je na místě k dispozici?", [
     "Elektřina, mobilní signál, pitná voda, sprchy i toalety. Zkrátka všechno potřebné, abychom společně zvládli víkend v pohodlí."]],
   ["Bude bazén?", [
@@ -218,7 +218,7 @@ export function InfoPage() {
           {FAQ.filter(([q]) => TOP_Q.includes(q)).sort((x, y) => TOP_Q.indexOf(x[0]) - TOP_Q.indexOf(y[0])).map(([q, a]) => (
             <div className="pb-card pb-qa" key={q}>
               <h3>{q}</h3>
-              <div className="pb-qa-a">{a.map((t, n) => <p key={n}>{t}</p>)}</div>
+              <div className="pb-qa-a">{a.map((t, n) => (typeof t === "string" ? <p key={n}>{t}</p> : <p key={n}><b>{t.b}</b></p>))}</div>
             </div>
           ))}
         </div>
@@ -232,7 +232,7 @@ export function InfoPage() {
             {FAQ.filter(([q]) => !TOP_Q.includes(q)).map(([q, a]) => (
               <div className="pb-card pb-qa" key={q}>
                 <h3>{q}</h3>
-                <div className="pb-qa-a">{a.map((t, n) => <p key={n}>{t}</p>)}</div>
+                <div className="pb-qa-a">{a.map((t, n) => (typeof t === "string" ? <p key={n}>{t}</p> : <p key={n}><b>{t.b}</b></p>))}</div>
               </div>
             ))}
           </div>
