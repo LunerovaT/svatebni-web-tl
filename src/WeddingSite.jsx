@@ -33,6 +33,7 @@ import ProfilePage from "./ProfilePage.jsx";
 import { Pushpin, ClueTag, Polaroid, ConfidentialStamp, MapIcon, Footprints, ProgressStrip, TagButton } from "./CaseFileBits.jsx";
 import MapPage from "./MapPage.jsx";
 import HomeTask from "./hometask/HomeTask.jsx";
+import GameIntro from "./game/GameIntro.jsx";
 import { STATIONS, FINAL_REQUIRES, doneCountOf } from "./stations/stations.js";
 import "./game/game.css";
 import TestPanel, { isTestMode } from "./game/TestPanel.jsx";
@@ -64,11 +65,23 @@ const NAV_ITEMS = [
   { id: "kde", label: "Kdy a kde" },
   { id: "program", label: "Program" },
   { id: "info", label: "Informace" },
-  { id: "rsvp", label: "Potvrdit účast" },
+  { id: "rsvp", label: "Potvrdit účast", doneLabel: "Účast potvrzena" },
   { id: "profil", label: "Můj profil" },
   { id: "hra", label: "Hra" },
 ];
 
+
+// Výrazná karta s domácím úkolem (pulzuje, dokud není vyřešený, ať si jí hráč hned všimne).
+function HomeTaskCard({ solved, onOpen }) {
+  return (
+    <div className={"gh-task" + (solved ? " done" : "")}>
+      <span className="gh-badge">{solved ? "Hotovo" : "Nový úkol · začněte tady"}</span>
+      <h2>Domácí úkol</h2>
+      <p>{solved ? "Úkol je vyřešený. Spis si můžete kdykoli znovu otevřít." : "Na stole po Eleanor zůstalo pár věcí. Rozlušťte její zprávu: je to první stopa a jde ji řešit hned, ještě před přidělením týmů."}</p>
+      <TagButton onClick={onOpen}>{solved ? "Otevřít spis" : "Otevřít domácí úkol"}</TagButton>
+    </div>
+  );
+}
 
 // Zaškrtávací možnosti přespání (hlavní osoba i další osoby).
 function SleepChecks({ value, onChange }) {
@@ -82,7 +95,7 @@ function SleepChecks({ value, onChange }) {
   );
 }
 
-const newGuest = () => ({ name: "", arrival: "same", arrivalOther: "", sleep: "ano", sleepRank: [], travel: "same", travelFrom: "" });
+const newGuest = () => ({ name: "", arrival: "same", arrivalOther: "", sleep: "ano", sleepRank: [], travel: "same", travelFrom: "", dietYes: false, diet: "" });
 
 function useHashRoute() {
   const [page, setPage] = useState(() => location.hash.replace("#/", "") || "home");
@@ -116,6 +129,9 @@ export default function WeddingSite() {
   const [travelFrom, setTravelFrom] = useState("");
   const [arrival, setArrival] = useState("patek");
   const [arrivalOther, setArrivalOther] = useState("");
+  const [dietYes, setDietYes] = useState(false);
+  const [diet, setDiet] = useState("");
+  const [comment, setComment] = useState("");
   const [guests, setGuests] = useState([]);
   const addGuest = () => setGuests((g) => (g.length >= 8 ? g : [...g, newGuest()]));
   const setGuest = (i, patch) => setGuests((g) => g.map((x, j) => (j === i ? { ...x, ...patch } : x)));
@@ -130,6 +146,9 @@ export default function WeddingSite() {
     if (!rsvpEmail.trim()) { setRsvpError("Vyplňte prosím e-mail — přihlašujete se jím do svého profilu."); return; }
     if (rsvpAttending === "ano" && rsvpPw.length < 6) { setRsvpError("Zvolte si prosím heslo k profilu (aspoň 6 znaků)."); return; }
     if (rsvpAttending === "ano" && sleepWants === "ano" && sleepRank.length === 0) { setRsvpError("Zaškrtněte prosím aspoň jednu možnost přespání, nebo zvolte „Nechci přespat“."); return; }
+    if (rsvpAttending === "ano" && dietYes && !diet.trim()) { setRsvpError("Napište prosím, jaké máte dietní omezení, nebo zvolte „Žádná“."); return; }
+    const badDiet = rsvpAttending === "ano" ? guests.find((g) => g.dietYes && !g.diet.trim()) : null;
+    if (badDiet) { setRsvpError(`U osoby ${badDiet.name.trim() || "navíc"} napište prosím dietní omezení, nebo zvolte „Žádná“.`); return; }
     if (rsvpAttending === "ano" && guests.some((g) => !g.name.trim())) { setRsvpError("Doplňte prosím jména všech přidaných osob, nebo je odeberte."); return; }
     const badGuest = rsvpAttending === "ano" ? guests.find((g) => g.sleep === "ano" && g.sleepRank.length === 0) : null;
     if (badGuest) { setRsvpError(`U osoby ${badGuest.name.trim()} zaškrtněte aspoň jednu možnost přespání, nebo zvolte „Nepřespí“.`); return; }
@@ -157,6 +176,7 @@ export default function WeddingSite() {
         ...(rsvpAttending === "ano" ? {
           sleep: sleepWants,
           sleepRank: sleepWants === "ano" ? sleepRank : [],
+          diet: dietYes ? diet.trim().slice(0, 300) : "",
           travel,
           travelFrom: travel === "odvoz" ? travelFrom.trim().slice(0, 120) : "",
           arrival,
@@ -169,8 +189,10 @@ export default function WeddingSite() {
             sleepRank: g.sleep === "ano" ? g.sleepRank : [],
             travel: g.travel,
             travelFrom: g.travel === "odvoz" ? g.travelFrom.trim().slice(0, 120) : "",
+            diet: g.dietYes ? g.diet.trim().slice(0, 300) : "",
           })),
         } : {}),
+        ...(comment.trim() ? { comment: comment.trim().slice(0, 1000) } : {}),
         createdAt: serverTimestamp(),
       });
       if (uid) {
@@ -180,6 +202,8 @@ export default function WeddingSite() {
         catch { await setDoc(ref, { name: rsvpName.trim(), contact: email, wantsGame: rsvpGame, teamId: null, homeClueSolved: false, createdAt: serverTimestamp() }); }
       }
       setRsvpPw("");
+      try { localStorage.setItem("rsvp_sent", "1"); } catch { /* bez ukládání */ }
+      setRsvpSent(true);
       setRsvpDone(true);
     } catch (err) {
       setRsvpError("Něco se nepovedlo, zkuste to prosím znovu. (" + err.message + ")");
@@ -204,6 +228,12 @@ export default function WeddingSite() {
   const [myTeam, setMyTeam] = useState(null); // živá data týmu (postup, jméno)
   const [myRsvp, setMyRsvp] = useState(undefined); // souhrn hosta (undefined = načítá se, null = žádná odpověď)
   const myPlayerId = myPlayer ? myPlayer.id : null;
+  const [introTick, setIntroTick] = useState(0);
+  const introKey = myPlayerId ? `intro_seen_${myPlayerId}` : null;
+  const introSeen = (() => { if (!introKey) return true; try { return localStorage.getItem(introKey) === "1"; } catch { return true; } })();
+  const finishIntro = () => { try { if (introKey) localStorage.setItem(introKey, "1"); } catch { /* bez ukládání */ } setIntroTick((t) => t + 1); go("hra"); };
+  const [rsvpSent, setRsvpSent] = useState(() => { try { return localStorage.getItem("rsvp_sent") === "1"; } catch { return false; } });
+  const rsvpConfirmed = rsvpSent || !!myRsvp;
   const authLoading = !authReady || (!!authUid && !playerChecked);
 
   useEffect(() => onAuthStateChanged(auth, (u) => { setAuthUid(u ? u.uid : null); setPlayerChecked(false); setAuthReady(true); }), []);
@@ -267,8 +297,10 @@ export default function WeddingSite() {
     setPlayerName(""); setContact(""); setPassword("");
     setFormError(""); setFormInfo("");
     setAuthMode("login");
+    try { localStorage.removeItem("rsvp_sent"); } catch { /* bez ukládání */ }
+    setRsvpSent(false);
     setRsvpDone(false); setRsvpName(""); setRsvpEmail(""); setRsvpPw(""); setRsvpAttending("ano"); setRsvpGame("ano");
-    setSleepWants("ano"); setSleepRank([]); setTravel("auto"); setTravelFrom(""); setArrival("patek"); setArrivalOther(""); setGuests([]); setRsvpError("");
+    setSleepWants("ano"); setSleepRank([]); setTravel("auto"); setTravelFrom(""); setArrival("patek"); setArrivalOther(""); setGuests([]); setDietYes(false); setDiet(""); setComment(""); setRsvpError("");
     go("home");
   };
 
@@ -422,7 +454,7 @@ export default function WeddingSite() {
         alreadySolved={!!myPlayer?.homeClueSolved}
         resetToken={myPlayer?.homeTaskResetAt?.toMillis?.() ?? null}
         onSolved={solveHomeClue}
-        onExit={() => go(myPlayerId ? "profil" : "hra")}
+        onExit={() => go("hra")}
         onContinue={() => go("hra")}
       />
       {isTestMode() && (
@@ -589,7 +621,7 @@ export default function WeddingSite() {
               <a key={n.id} href={"#/" + (n.id === "home" ? "" : n.id)}
                  className={(page === n.id ? "active " : "") + (n.id === "hra" ? "pb-nav-game" : "")}
                  onClick={(e) => { e.preventDefault(); go(n.id); }}>
-                {n.label}
+                {n.doneLabel && rsvpConfirmed ? n.doneLabel : n.label}
               </a>
             ))}
           </nav>
@@ -603,7 +635,7 @@ export default function WeddingSite() {
             <a key={n.id} href={"#/" + (n.id === "home" ? "" : n.id)} className="display"
                style={{ fontSize: 26, textDecoration: "none", color: n.id === "hra" ? "#93713c" : "#221D16", fontWeight: n.id === "hra" ? 600 : 500 }}
                onClick={(e) => { e.preventDefault(); go(n.id); setMobileOpen(false); }}>
-              {n.label}
+              {n.doneLabel && rsvpConfirmed ? n.doneLabel : n.label}
             </a>
           ))}
         </div>
@@ -616,7 +648,7 @@ export default function WeddingSite() {
                    hasTeam={!!myTeam?.id} isLoggedIn={!!myPlayerId} revealed={!!myTeam?.revealed} {...testActions} />
       )}
       <main className={isGameScreen ? "game-shell" : ""}>
-        {page === "home" && <HomePage go={go} choosePath={choosePath} chosenPath={chosenPath} />}
+        {page === "home" && <HomePage go={go} choosePath={choosePath} chosenPath={chosenPath} rsvpDone={rsvpConfirmed} />}
         {page === "kde" && <WherePage />}
         {page === "info" && <InfoPage />}
         {page === "program" && <ProgramPage />}
@@ -680,6 +712,14 @@ export default function WeddingSite() {
                       </select>
                       {travel === "odvoz" && <input type="text" maxLength={120} value={travelFrom} onChange={(e) => setTravelFrom(e.target.value)} placeholder="Odkud (město, zastávka)?" style={{ marginTop: 6 }} />}
                     </div>
+                    <div className="field">
+                      <label>Dietní omezení nebo alergie</label>
+                      <select value={dietYes ? "ano" : "ne"} onChange={(e) => setDietYes(e.target.value === "ano")}>
+                        <option value="ne">Žádná</option>
+                        <option value="ano">Ano, mám</option>
+                      </select>
+                      {dietYes && <input type="text" maxLength={300} value={diet} onChange={(e) => setDiet(e.target.value)} placeholder="Jaká? (vegetarián, bezlepkové, alergie na ořechy…)" style={{ marginTop: 6 }} />}
+                    </div>
                     <div className="field pb-guests">
                       <label>Registruji i další osoby</label>
                       <p className="pb-guests-note">Hodí se, když vyplňujete za celou skupinu (partner, děti, babička, teta…). Za každou osobu vyplníte stejné údaje jako za sebe, ať víme, jak se kdo k nám dostane a kde bude spát.</p>
@@ -722,6 +762,14 @@ export default function WeddingSite() {
                             </select>
                             {g.travel === "odvoz" && <input type="text" maxLength={120} value={g.travelFrom} onChange={(e) => setGuest(i, { travelFrom: e.target.value })} placeholder="Odkud (město, zastávka)?" />}
                           </div>
+                          <div className="pb-gf">
+                            <label>Dietní omezení nebo alergie</label>
+                            <select value={g.dietYes ? "ano" : "ne"} onChange={(e) => setGuest(i, { dietYes: e.target.value === "ano" })}>
+                              <option value="ne">Žádná</option>
+                              <option value="ano">Ano, má</option>
+                            </select>
+                            {g.dietYes && <input type="text" maxLength={300} value={g.diet} onChange={(e) => setGuest(i, { diet: e.target.value })} placeholder="Jaká?" />}
+                          </div>
                         </div>
                       ))}
                       {guests.length < 8 && <button type="button" className="pb-btn pb-btn-add" onClick={addGuest}>+ Přidat další osobu</button>}
@@ -738,6 +786,10 @@ export default function WeddingSite() {
                         <option value="ano">Ano</option>
                         <option value="ne">Ne, díky</option>
                       </select>
+                    </div>
+                    <div className="field">
+                      <label>Vzkaz nebo cokoli dalšího (nepovinné)</label>
+                      <textarea rows={3} maxLength={1000} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Cokoli, co bychom měli vědět…" />
                     </div>
                     {rsvpError && <p style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{rsvpError}</p>}
                     <button type="submit" className="pb-btn solid" disabled={rsvpBusy}>
@@ -793,57 +845,35 @@ export default function WeddingSite() {
               <div className="case-bg">
                 <div className="case-card tilt-l">
                   <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
-                  <p className="case-label">{authMode === "register" ? "nová registrace" : "přihlášení"}</p>
-                  <h1 className="display" style={{ fontSize: "clamp(28px,5vw,40px)", margin: "0 0 14px" }}>
-                    {authMode === "register" ? "Zaregistrujte se" : "Přihlaste se"}
-                  </h1>
+                  <p className="case-label">přihlášení do hry</p>
+                  <h1 className="display" style={{ fontSize: "clamp(28px,5vw,40px)", margin: "0 0 14px" }}>Přihlaste se</h1>
                   <p className="lede" style={{ marginBottom: 24, fontSize: 14 }}>
-                    {authMode === "register"
-                      ? "Zvolte si e-mail a heslo. Do týmů a rolí vás rozřadíme my, jakmile budeme vědět, kdo všechno bude hrát."
-                      : "Přihlaste se e-mailem a heslem, které jste zadali při potvrzení účasti."}
-                    <span className="placeholder">obsah hry later</span>
+                    Použijte e-mail a heslo, které jste zadali při potvrzení účasti. Účet vzniká právě tam, takže hrát mohou jen potvrzení hosté, kteří zaškrtli, že chtějí hrát.
                   </p>
-
-                  <form onSubmit={authMode === "register" ? submitRegistration : submitLogin}
-                        style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    {authMode === "register" && (
-                      <div className="field">
-                        <label>Jméno a příjmení</label>
-                        <input type="text" value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Jana Nováková" />
-                      </div>
-                    )}
-
+                  <form onSubmit={submitLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     <div className="field">
                       <label>E-mail</label>
                       <input type="email" autoComplete="username" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="jana@example.cz" />
                     </div>
-
                     <div className="field">
                       <label>Heslo</label>
-                      <input type="password" autoComplete={authMode === "register" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={authMode === "register" ? "aspoň 6 znaků" : ""} />
+                      <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
-
                     {formInfo && <p style={{ color: "#3a5a3a", fontSize: 13.5, margin: 0 }}>{formInfo}</p>}
                     {formError && <p style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{formError}</p>}
-
                     <button type="submit" className="btn" disabled={formBusy} style={{ alignSelf: "flex-start", marginTop: 4 }}>
-                      {formBusy ? "Chvilku…" : authMode === "register" ? "Registrovat se" : "Přihlásit se"}
+                      {formBusy ? "Chvilku…" : "Přihlásit se"}
                     </button>
                   </form>
-
-                  <button
-                    onClick={() => { setAuthMode(authMode === "register" ? "login" : "register"); setFormError(""); setFormInfo(""); }}
-                    className="g-linkbtn" style={{ marginTop: 20 }}>
-                    {authMode === "register" ? "Už mám účet, chci se přihlásit" : "Ještě nemám účet"}
-                  </button>
-                  {authMode === "login" && (
-                    <button onClick={resetPassword} className="g-linkbtn" style={{ marginTop: 10, display: "block" }}>Zapomněla/a jsem heslo</button>
-                  )}
+                  <button onClick={() => go("rsvp")} className="g-linkbtn" style={{ marginTop: 20 }}>Ještě nemám účet: potvrdit účast</button>
+                  <button onClick={resetPassword} className="g-linkbtn" style={{ marginTop: 10, display: "block" }}>Zapomněla/a jsem heslo</button>
                 </div>
               </div>
             </div>
           </section>
         )}
+
+        {page === "hra" && myPlayerId && myPlayer?.wantsGame !== "ne" && !introSeen && <GameIntro onDone={finishIntro} />}
 
         {page === "hra" && myPlayerId && myPlayer?.wantsGame === "ne" && (
           <section className="block" style={{ paddingTop: 40 }}>
@@ -866,15 +896,16 @@ export default function WeddingSite() {
         {page === "hra" && myPlayerId && myPlayer?.wantsGame !== "ne" && !myPlayer?.teamId && (
           <section className="block" style={{ paddingTop: 40 }}>
             <div className="wrap">
-              <div className="case-bg">
-                <div className="case-card tilt-r">
-                  <Pushpin tint={120} style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
-                  <p className="case-label">spis založen</p>
-                  <h3 className="display" style={{ fontSize: 26, margin: "0 0 14px" }}>{myPlayer?.name || "Díky!"}</h3>
-                  <p style={{ fontSize: 14.5, margin: "0 0 18px" }}>
-                    Zatím nemáte přiřazený tým — jakmile budou týmy hotové, uvidíte to tady rovnou, bez nutnosti se znovu přihlašovat.
-                  </p>
-                  <TagButton onClick={() => go("domaci-ukol")}>Otevřít domácí úkol</TagButton>
+              <p className="eyebrow">Spis vyšetřovatele</p>
+              <h1 className="display">{myPlayer?.name || "Vítejte"}</h1>
+              <div className="case-card">
+                <HomeTaskCard solved={!!myPlayer?.homeClueSolved} onOpen={() => go("domaci-ukol")} />
+                <p className="gh-note"><b>Tým zatím nemáte.</b> Přidělíme vám ho, jakmile bude jasné, kdo všechno hraje. Uvidíte ho tady, bez nutnosti se znovu přihlašovat. Do té doby se můžete pustit do domácího úkolu.</p>
+                <div className="gh-grid">
+                  <div className="gh-tile locked"><b>Tým a stanoviště</b><span>Odemkne se po přidělení týmu</span></div>
+                  <div className="gh-tile locked"><b>Mapa</b><span>Odemkne se po přidělení týmu</span></div>
+                  <div className="gh-tile locked"><b>Příběh a podezřelí</b><span>Odemkne se po přidělení týmu</span></div>
+                  <button className="gh-tile" onClick={() => go("uvod")}><b>Jak hra funguje</b><span>Přehrát úvod</span></button>
                 </div>
               </div>
             </div>
@@ -887,6 +918,7 @@ export default function WeddingSite() {
               <p className="eyebrow">Spis týmu</p>
               <h1 className="display">{myTeam?.name || "…"}</h1>
               {weddingCountdown() && <p className="g-countdown">{weddingCountdown()}</p>}
+              {!myPlayer?.homeClueSolved && <HomeTaskCard solved={false} onOpen={() => go("domaci-ukol")} />}
               <div className="case-card">
                 <EvidenceShelf items={evidence} onGoStation={(i) => go(`stanoviste/${i + 1}`)} />
               </div>
@@ -931,24 +963,7 @@ export default function WeddingSite() {
           </section>
         )}
 
-        {page === "uvod" && myPlayerId && (
-          <section className="block" style={{ paddingTop: 40, position: "relative", overflow: "hidden" }}>
-            <div className="wrap" style={{ position: "relative" }}>
-              <div className="case-bg">
-                <div className="case-card" style={{ textAlign: "center" }}>
-                  <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
-                  <ConfidentialStamp style={{ marginBottom: 14 }} />
-                  <h1 className="display" style={{ fontSize: "clamp(30px,7vw,44px)", margin: "0 0 14px" }}>Vítejte ve hře</h1>
-                  <p className="lede" style={{ margin: "0 auto 24px" }}>
-                    Otevíráte spis, který ještě čeká na svůj případ. Až budeme mít scénář hotový, tady začne vaše pátrání.
-                    <span className="placeholder">obsah later</span>
-                  </p>
-                  <TagButton onClick={() => go("hra")}>Otevřít spis týmu</TagButton>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+        {page === "uvod" && myPlayerId && <GameIntro onDone={() => go("hra")} />}
 
         {page === "pripad" && myPlayerId && myTeam && (
           <section className="block">

@@ -303,3 +303,34 @@
 .dv-tip{ flex:none; margin:0; padding:8px 16px 14px; text-align:center; font:400 12.5px var(--g-sans); color:#9c8f74; }
 @media (min-width:900px){ .dv-box{ --base:min(640px, calc((100vh - 140px) * .88)); } }
 @media (prefers-reduced-motion: reduce){ .dv-box, .dv-big, .dv-img{ animation:none; transition:none; } }
+
+/* ===== úvodní minifilm ===== */
+.gi{ position:fixed; inset:0; z-index:5000; display:grid; place-items:center; padding:24px; cursor:default;
+  background:radial-gradient(ellipse 80% 60% at 50% 40%, rgb(43,22,12), rgb(6,3,2)); color:#f0dfb2; }
+.gi-scene{ max-width:640px; width:100%; text-align:center; transition:opacity .6s ease; }
+.gi-scene.out{ opacity:0; }
+.gi-kicker{ font:500 12px/1 var(--g-body, 'IBM Plex Sans', sans-serif); letter-spacing:.28em; text-transform:uppercase; color:#b98f4a; margin:0 0 26px; animation:gi-in 1.2s ease both; }
+.gi-line{ font:500 clamp(22px,4.4vw,32px)/1.4 'Cormorant Garamond', serif; margin:16px 0; animation:gi-in 1.2s ease both; }
+.gi-foot{ min-height:70px; margin-top:26px; }
+.gi-next{ background:#f4d84a; color:#241a12; border:0; border-radius:8px; padding:13px 28px; font:600 15px/1 'IBM Plex Sans', sans-serif; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.5); animation:gi-in .8s ease both; }
+.gi-skip{ position:absolute; top:16px; right:18px; background:none; border:0; color:rgba(240,223,178,.6); font:400 13px 'IBM Plex Sans', sans-serif; text-decoration:underline; cursor:pointer; padding:8px; }
+.gi-dots{ position:absolute; bottom:26px; left:0; right:0; display:flex; justify-content:center; gap:8px; }
+.gi-dots span{ width:7px; height:7px; border-radius:50%; background:rgba(240,223,178,.22); }
+.gi-dots span.on{ background:#f4d84a; } .gi-dots span.past{ background:rgba(240,223,178,.55); }
+@keyframes gi-in{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce){ .gi-kicker,.gi-line,.gi-next{ animation:none; } .gi-scene{ transition:none; } }
+
+/* ===== rozcestník hry ===== */
+.gh-task{ position:relative; display:block; text-decoration:none; color:inherit; border:2px solid var(--g-seal, #8f2a22); background:rgba(244,216,74,.16); border-radius:6px; padding:20px 20px 18px; margin-bottom:18px; animation:gh-pulse 2.2s ease-in-out infinite; }
+.gh-task.done{ animation:none; border:1px solid rgba(0,0,0,.2); background:rgba(0,0,0,.04); }
+.gh-badge{ display:inline-block; background:var(--g-seal, #8f2a22); color:#fff; font:600 11px/1 'IBM Plex Sans', sans-serif; letter-spacing:.14em; text-transform:uppercase; padding:6px 10px; border-radius:3px; margin-bottom:10px; }
+.gh-task h2{ margin:0 0 6px; font:400 clamp(24px,5vw,30px)/1.15 var(--g-head, 'Cormorant Garamond', serif); }
+.gh-task p{ margin:0 0 14px; font-size:14.5px; line-height:1.5; }
+@keyframes gh-pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(143,42,34,.45); } 50%{ box-shadow:0 0 0 10px rgba(143,42,34,0); } }
+@media (prefers-reduced-motion:reduce){ .gh-task{ animation:none; } }
+.gh-note{ font-size:14px; line-height:1.5; margin:0 0 18px; padding:12px 14px; border-left:3px solid var(--g-brass, #93713c); background:rgba(147,113,60,.1); }
+.gh-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.gh-tile{ display:flex; flex-direction:column; gap:4px; text-align:left; background:none; border:1px dashed rgba(0,0,0,.3); border-radius:5px; padding:12px; font:inherit; color:inherit; cursor:pointer; text-decoration:none; }
+.gh-tile.locked{ opacity:.55; cursor:default; }
+.gh-tile b{ font:400 17px/1.2 var(--g-head, 'Cormorant Garamond', serif); }
+.gh-tile span{ font-size:12.5px; line-height:1.35; }

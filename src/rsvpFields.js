@@ -23,12 +23,12 @@ export const TRAVEL_LABELS = { auto: "Autem", odvoz: "Potřebuje odvoz", jinak: 
 // Všichni lidé z jedné odpovědi (hlavní osoba + další osoby); „stejně jako já“ se dosadí z hlavní osoby.
 export const peopleOf = (r) => {
   if (r.attending !== "ano") return [];
-  const main = { name: r.name, main: true, arrival: r.arrival, arrivalOther: r.arrivalOther, sleep: r.sleep, sleepRank: r.sleepRank || [], travel: r.travel, travelFrom: r.travelFrom };
+  const main = { name: r.name, main: true, arrival: r.arrival, arrivalOther: r.arrivalOther, sleep: r.sleep, sleepRank: r.sleepRank || [], travel: r.travel, travelFrom: r.travelFrom, diet: r.diet };
   const rest = (r.guests || []).map((g) => ({
     name: g.name, main: false,
     arrival: !g.arrival || g.arrival === "same" ? r.arrival : g.arrival,
     arrivalOther: !g.arrival || g.arrival === "same" ? r.arrivalOther : g.arrivalOther,
-    sleep: g.sleep, sleepRank: g.sleepRank || [],
+    sleep: g.sleep, sleepRank: g.sleepRank || [], diet: g.diet,
     travel: !g.travel || g.travel === "same" ? r.travel : g.travel,
     travelFrom: !g.travel || g.travel === "same" ? r.travelFrom : g.travelFrom,
   }));
@@ -45,7 +45,8 @@ export const sleepText = (r) => (r.attending !== "ano" ? "" : sleepOf(peopleOf(r
 export const arrivalText = (r) => (r.attending !== "ano" ? "" : arrivalOf(peopleOf(r)[0]));
 export const travelText = (r) => (r.attending !== "ano" ? "" : travelOf(peopleOf(r)[0]));
 // jedna osoba na řádek: „Teta Marie – příjezd V pátek; přespání: celý pokoj; doprava: Autem“
-export const personLine = (p) => `${p.name} – příjezd: ${arrivalOf(p)}; přespání: ${sleepOf(p)}; doprava: ${travelOf(p)}`;
+export const personLine = (p) => `${p.name} – příjezd: ${arrivalOf(p)}; přespání: ${sleepOf(p)}; doprava: ${travelOf(p)}${p.diet ? `; dieta: ${p.diet}` : ""}`;
+export const dietText = (r) => (r.attending !== "ano" ? "" : peopleOf(r).filter((p) => p.diet).map((p) => (p.main ? p.diet : `${p.name}: ${p.diet}`)).join(" | "));
 export const guestsText = (r) => peopleOf(r).slice(1).map(personLine).join(" | ");
 
 // sloupce přehledu / CSV / souhrnu v profilu
@@ -55,8 +56,10 @@ export const COLUMNS = [
   { key: "arrival", label: "Příjezd", get: arrivalText },
   { key: "sleep", label: "Přespání (pořadí preferencí)", get: sleepText },
   { key: "travel", label: "Doprava", get: travelText },
+  { key: "diet", label: "Dietní omezení", get: dietText },
   { key: "guests", label: "Další osoby", get: guestsText },
   { key: "wantsGame", label: "Hra", get: (r) => (r.wantsGame === "ano" ? "Hraje" : "Nehraje") },
+  { key: "comment", label: "Vzkaz", get: (r) => r.comment || "" },
 ];
 
 // co organizátor hostovi potvrzuje zpět (ukládá se do rsvps/{id}.confirm.{key} = { ok, text })
@@ -67,7 +70,7 @@ export const CONFIRM_ITEMS = [
 
 export const KNOWN_KEYS = new Set([
   "id", "name", "contact", "attending", "wantsGame", "sleep", "sleepRank", "travel", "travelFrom", "travelOther",
-  "arrival", "arrivalOther", "guests", "createdAt", "confirm", "guestNote",
+  "arrival", "arrivalOther", "diet", "comment", "guests", "createdAt", "confirm", "guestNote",
 ]);
 
 export const extraAnswers = (r) =>

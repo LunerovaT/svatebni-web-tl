@@ -3,10 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ORGANIZÁTOŘI: jen tyto e-maily (musí mít účet ve Firebase Authentication → Users).
-    // Stejný seznam je v src/organizers.js. Seznam musí odpovídat src/organizers.js.
+    // Stejný seznam je v src/organizers.js. Lukášův e-mail doplňte místo zástupného.
     function isOrganizer() {
       return request.auth != null
-        && request.auth.token.email in ['tereza.luner@gmail.com', 'lunerova.tereza@seznam.cz', 'lukassnopek113@gmail.com'];
+        && request.auth.token.email in ['tereza.luner@gmail.com', 'DOPLNIT-LUKASUV-EMAIL@example.com'];
     }
     function signedIn() { return request.auth != null; }
     // tým, ve kterém je přihlášený hráč
@@ -17,9 +17,11 @@ service cloud.firestore {
     // RSVP: odeslat smí kdokoli (i bez účtu), číst a upravovat jen organizátor;
     // host smí číst jen svou vlastní odpověď (podle e-mailu, na který je účet).
     match /rsvps/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['name','contact','attending','wantsGame','sleep','sleepRank','travel','travelFrom','travelOther','arrival','arrivalOther','guests','createdAt'])
+      allow create: if request.resource.data.keys().hasOnly(['name','contact','attending','wantsGame','sleep','sleepRank','travel','travelFrom','travelOther','arrival','arrivalOther','diet','comment','guests','createdAt'])
                     && request.resource.data.name is string && request.resource.data.name.size() < 120
                     && request.resource.data.contact is string && request.resource.data.contact.size() < 160
+                    && (!('comment' in request.resource.data) || request.resource.data.comment.size() <= 1000)
+                    && (!('diet' in request.resource.data) || request.resource.data.diet.size() <= 300)
                     && (!('guests' in request.resource.data) || (request.resource.data.guests is list && request.resource.data.guests.size() <= 8));
       allow read: if isOrganizer() || (signedIn() && resource.data.contact == request.auth.token.email);
       allow update, delete: if isOrganizer();

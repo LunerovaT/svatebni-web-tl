@@ -31,7 +31,7 @@ function Timeline() {
   );
 }
 
-export function HomePage({ go, choosePath, chosenPath }) {
+export function HomePage({ go, choosePath, chosenPath, rsvpDone }) {
   const countdown = weddingCountdown();
   return (
     <>
@@ -54,7 +54,7 @@ export function HomePage({ go, choosePath, chosenPath }) {
               <span className="pb-bigcta-arrow" aria-hidden="true">→</span>
             </a>
             <div className="pb-cta">
-              <a className="pb-btn solid" href="#/rsvp" onClick={(e) => { e.preventDefault(); go("rsvp"); }}>Potvrdit účast</a>
+              <a className="pb-btn solid" href="#/rsvp" onClick={(e) => { e.preventDefault(); go("rsvp"); }}>{rsvpDone ? "Účast potvrzena ✓" : "Potvrdit účast"}</a>
               <a className="pb-btn" href="#/kde" onClick={(e) => { e.preventDefault(); go("kde"); }}>Kdy a kde</a>
             </div>
             {countdown && <p className="pb-count">{countdown}</p>}

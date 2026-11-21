@@ -374,3 +374,6 @@ nav.links a.pb-nav-game:hover, nav.links a.pb-nav-game.active{ background:var(--
 .pb-root .pb-form .pb-guest .pb-checks label{ display:flex; flex-direction:row; align-items:flex-start; margin:0; }
 .pb-paths .pb-btn.ghost{ color:#f3e9d6; border-color:rgba(243,233,214,.55); background:transparent; }
 .pb-paths .pb-btn.ghost:hover{ background:rgba(243,233,214,.12); }
+
+.pb-root .pb-form textarea{ width:100%; box-sizing:border-box; min-height:84px; resize:vertical; background:#fff; border:1px solid var(--pb-line); border-radius:3px; padding:9px 10px; margin-top:4px; }
+.pb-root .pb-form textarea:focus{ border-color:var(--pb-btn); outline:none; }
