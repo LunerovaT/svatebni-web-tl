@@ -23,7 +23,7 @@ function Fact({ k, v, sub, href, onClick }) {
 function Timeline() {
   return (
       <div className="pb-timeline">
-        <div className="pb-t"><div className="pb-t-time"><b>pá 30. 7.</b></div><div><h4>Chystání akce</h4><p>Příprava areálu. Páteční příjezd není oficiální součástí programu, konkrétní lidi oslovíme sami.</p></div></div>
+        <div className="pb-t"><div className="pb-t-time"><b>pá 30. 7.</b></div><div><h4>Chystání akce</h4><p>Začínají přípravy.</p></div></div>
         <div className="pb-t"><div className="pb-t-time"><b>so 31. 7.</b> <Soon>čas doplníme</Soon></div><div><h4>Příjezd hostů</h4><p>Příjezd a ubytování.</p></div></div>
         <div className="pb-t"><div className="pb-t-time"><Soon>čas doplníme</Soon></div><div><h4>Obřad</h4><p>Slavnostní chvíle, kvůli které jsme tady.</p></div></div>
         <div className="pb-t"><div className="pb-t-time"><Soon>čas doplníme</Soon></div><div><h4>Hostina a večerní program</h4><p>Jídlo, pití, tanec a také malé pátrání pro ty, kdo budou chtít.</p></div></div>

@@ -312,3 +312,7 @@
 .ht-file .ht-linkbtn{color:rgba(243,233,210,.7)}
 
 @media (max-aspect-ratio: 1/1){ .ht-title h1{display:none} .ht-title{display:flex;justify-content:center} }
+.ht-nb-lab{margin:10px 0 2px;font:600 11px/1 'IBM Plex Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#b98f4a}
+.ht-cipherline,.ht-resultline{margin:2px 0 6px;font:600 clamp(17px,2.4vw,22px)/1.5 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.08em;word-spacing:.5em;color:#f0dfb2;word-break:break-word}
+.ht-resultline.bad{color:#d98a7c}
+.ht-resultline.ok{color:#9fd49a}

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import "./hometask.css";
 import Wheel from "./Wheel.jsx";
+import GameIntro from "../game/GameIntro.jsx";
+import { SUSPECT_SCENES } from "../story/suspectsIntro.js";
 import { play } from "./sound.js";
 import { decodeLetter, evaluate, verifyCipher } from "./cipher.js";
 import { CIPHER, CIPHER_LETTERS, CIPHER_WORDS, CIPHERTEXT, DOCS, INK, SHIFT_FEEDBACK, SLOT_COUNT, STORY, docAlt } from "./config.js";
@@ -33,7 +35,7 @@ const DEFAULT = () => ({
   hintsUsed: 0,
   attempts: 0,
   solved: false,
-  stage: "desk",           // desk | reveal | file
+  stage: "desk",           // desk | reveal | suspects | file
   sound: false,
 });
 
@@ -354,28 +356,33 @@ function DocDetail({ doc, st, patch, snd, say, setTools }) {
 function WheelDetail({ st, patch, snd, onSolve, setTools }) {
   const [fb, setFb] = useState("");
   const [shake, setShake] = useState(0);
-  const selLetter = st.selected != null ? CIPHER_LETTERS[st.selected] : null;
-  const filled = st.slots.filter(Boolean).length;
-  const setOffset = (o) => { patch({ offset: o }); setFb(""); };
+  const [tried, setTried] = useState(null); // { offset, text, ok } – výsledek posledního „Zadat“
+  const solving = useRef(false);
+  const setOffset = (o) => { patch({ offset: o }); setFb(""); setTried(null); };
   useEffect(() => { setTools(null); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const tapCell = (i) => {
-    snd("tick"); setFb("");
-    patch((s) => { const slots = s.slots.slice(); slots[i] = { ch: decodeLetter(CIPHER_LETTERS[i], s.offset), off: s.offset }; return { slots, selected: i }; });
-  };
-  const clearCell = (i) => patch((s) => { const slots = s.slots.slice(); slots[i] = null; return { slots }; });
-  const check = () => {
-    const res = evaluate(st.slots, CIPHER, SHIFT_FEEDBACK, STORY.msg);
-    if (res.ok) { snd("chime"); onSolve(); }
-    else { setFb(res.msg); setShake((n) => n + 1); patch({ attempts: st.attempts + 1 }); snd("wrong"); }
+  const decodeAll = (offset) => CIPHER_WORDS.map((w) => [...w].map((c) => decodeLetter(c, offset)).join("")).join(" ");
+  const submit = () => {
+    if (solving.current) return;
+    const offset = st.offset;
+    const text = decodeAll(offset);
+    if (offset === CIPHER.key) {
+      solving.current = true;
+      setTried({ offset, text, ok: true }); setFb("");
+      snd("chime");
+      setTimeout(onSolve, 1400);
+    } else {
+      setTried({ offset, text, ok: false });
+      setFb(SHIFT_FEEDBACK[offset] || "Tohle česky není. Zkuste jiný posun.");
+      setShake((n) => n + 1); patch({ attempts: st.attempts + 1 }); snd("wrong");
+    }
   };
 
-  let idx = 0;
   return (
     <div className="ht-wheelgrid">
       <div className="ht-stagebox ht-wheelstage">
         <div className="ht-fit" style={{ "--r": 1 }}>
-          <Wheel offset={st.offset} interactive cipherLetter={selLetter} onChange={setOffset} onTick={() => snd("tick")} />
+          <Wheel offset={st.offset} interactive cipherLetter={null} onChange={setOffset} onTick={() => snd("tick")} />
         </div>
       </div>
       <div className="ht-wheelside">
@@ -389,31 +396,17 @@ function WheelDetail({ st, patch, snd, onSolve, setTools }) {
         ) : (
           <div className="ht-notebook">
             <p className="ht-nb-ink">„{INK.line}“</p>
-            <div className="ht-reader" aria-live="polite">
-              {selLetter ? <><b>{selLetter}</b><i>čtu jako</i><b>{decodeLetter(selLetter, st.offset)}</b></> : <i>Klepněte na písmeno šifry.</i>}
-            </div>
-            <div className="ht-strip">
-              {CIPHER_WORDS.map((w, wi) => (
-                <div className="ht-word" key={wi}>
-                  {[...w].map((c) => {
-                    const i = idx++; const slot = st.slots[i];
-                    return (
-                      <button key={i} className={`ht-cell${st.selected === i ? " sel" : ""}`} onClick={() => tapCell(i)}
-                              aria-label={`Písmeno šifry ${c}, pozice ${i + 1}. ${slot ? `Přepsáno jako ${slot.ch}.` : "Nepřepsáno."}`}
-                              onKeyDown={(e) => { if (e.key === "Backspace" || e.key === "Delete") { e.preventDefault(); clearCell(i); } }}>
-                        <span className="c">{c}</span><span className="p">{slot ? slot.ch : " "}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
+            <p className="ht-nb-lab">Zašifrovaná zpráva</p>
+            <p className="ht-cipherline">{CIPHERTEXT}</p>
+            {tried && (
+              <>
+                <p className="ht-nb-lab">{tried.ok ? "Správný posun" : "Výsledek"} {tried.offset}</p>
+                <p className={`ht-resultline ${tried.ok ? "ok" : "bad"}`} aria-live="polite">{tried.text}</p>
+              </>
+            )}
             <div key={shake} className={`ht-fb${shake ? " shake" : ""}`} role="status">{fb}</div>
             <div className="ht-checkrow">
-              {filled > 0 && <button className="ht-linkbtn" onClick={() => { setFb(""); patch({ slots: Array(SLOT_COUNT).fill(null), selected: null }); }}>smazat přepis</button>}
-              <button className="ht-tagbtn" disabled={filled < SLOT_COUNT} onClick={check}>
-                {filled < SLOT_COUNT ? `Přepsáno ${filled} z ${SLOT_COUNT}` : "Zkontrolovat přepis"}
-              </button>
+              <button className="ht-tagbtn" disabled={tried?.ok} onClick={submit}>Zadat posun {st.offset}</button>
             </div>
           </div>
         )}
@@ -446,13 +439,13 @@ function RevealView({ rm, offset, onContinue }) {
         ))}
       </h2>
       {ready && <p className="ht-reveal-after ht-fadein">{STORY.revealAfter}</p>}
-      {ready && <button className="ht-tagbtn ht-fadein" onClick={onContinue}>Otevřít vyšetřovací spis</button>}
+      {ready && <button className="ht-tagbtn ht-fadein" onClick={onContinue}>Pokračovat</button>}
     </div>
   );
 }
 
 // ---------------- spis ----------------
-function FileView({ st, onContinue, onDesk, onReset }) {
+function FileView({ st, onContinue, onDesk, onReset, onSuspects }) {
   return (
     <div className="ht-file">
       <div className="ht-casefile">
@@ -468,6 +461,7 @@ function FileView({ st, onContinue, onDesk, onReset }) {
       </div>
       <div className="ht-filebtns">
         <button className="ht-tagbtn" onClick={onContinue}>Pokračovat do hry</button>
+        <button className="ht-tagbtn alt" onClick={onSuspects}>Znovu představení podezřelých</button>
         <button className="ht-tagbtn alt" onClick={onDesk}>Zpět na stůl</button>
       </div>
       <button className="ht-linkbtn ht-reset" onClick={onReset}>začít úkol znovu (test)</button>
@@ -600,8 +594,9 @@ export default function HomeTask({ alreadySolved = false, resetToken = null, onS
         </div>
       )}
 
-      {st.stage === "reveal" && <RevealView rm={rm} offset={st.offset} onContinue={() => { snd("paper"); patch({ stage: "file" }); }} />}
-      {st.stage === "file" && <FileView st={st} onContinue={onContinue} onDesk={() => patch({ stage: "desk", open: null })} onReset={reset} />}
+      {st.stage === "reveal" && <RevealView rm={rm} offset={st.offset} onContinue={() => { snd("paper"); patch({ stage: "suspects" }); }} />}
+      {st.stage === "suspects" && <GameIntro scenes={SUSPECT_SCENES} onDone={() => patch({ stage: "file" })} />}
+      {st.stage === "file" && <FileView st={st} onContinue={onContinue} onDesk={() => patch({ stage: "desk", open: null })} onReset={reset} onSuspects={() => patch({ stage: "suspects" })} />}
       {st.intro && st.stage === "desk" && <IntroView rm={rm} onStart={() => { snd("paper"); patch({ intro: false }); }} />}
 
       <div className="ht-sr" aria-live="polite">{live}</div>
