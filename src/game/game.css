@@ -338,3 +338,11 @@
 .gi-title{ font:500 clamp(28px,5vw,38px)/1.1 'Cormorant Garamond', serif; margin:0; color:#f4e6bd; animation:gi-in 1.2s ease both; }
 .gi-sub{ font:500 12px/1 'IBM Plex Sans', sans-serif; letter-spacing:.2em; text-transform:uppercase; color:#b98f4a; margin:8px 0 6px; animation:gi-in 1.2s ease both; }
 .gi-scene .gi-line{ font-size:clamp(19px,3.4vw,25px); }
+.gi-bg{ position:absolute; inset:0; background-size:cover; transform-origin:50% 50%; opacity:.9; animation:gi-zoom 14s ease-out both, gi-bgin 1.4s ease both; transition:opacity .6s ease; }
+.gi-bg.out{ opacity:0; }
+.gi-shade{ position:absolute; inset:0; background:radial-gradient(ellipse 70% 60% at 50% 45%, rgba(6,3,2,.28), rgba(6,3,2,.8) 90%); pointer-events:none; }
+.gi-scene, .gi-skip, .gi-dots{ z-index:2; }
+@keyframes gi-zoom{ from{ transform:scale(1); } to{ transform:scale(var(--z,1.15)); } }
+@keyframes gi-bgin{ from{ opacity:0; } to{ opacity:.9; } }
+@media (prefers-reduced-motion:reduce){ .gi-bg{ animation:none; } }
+.gi{ overflow:hidden; }

@@ -28,6 +28,8 @@ export default function GameIntro({ onDone, scenes = INTRO_SCENES }) {
   return createPortal(
     <div className="gi" role="dialog" aria-label="Úvod do hry" onClick={() => !allShown && setN(99)}>
       <button className="gi-skip" onClick={(e) => { e.stopPropagation(); onDone(); }}>Přeskočit</button>
+      {sc.bg && <div key={"bg" + i} className={"gi-bg" + (out ? " out" : "")} style={{ backgroundImage: `url(${sc.bg})`, backgroundPosition: sc.pos || "50% 50%", "--z": sc.zoom || 1.1 }} />}
+      <div className="gi-shade" />
       <div className={"gi-scene" + (out ? " out" : "")} key={i}>
         <p className="gi-kicker">{sc.kicker}</p>
         {sc.image && <img className="gi-img" src={sc.image} alt={sc.title || ""} />}

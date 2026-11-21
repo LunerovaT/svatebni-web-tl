@@ -380,3 +380,36 @@ nav.links a.pb-nav-game:hover, nav.links a.pb-nav-game.active{ background:var(--
 
 .pb-dress-figs{ max-width:540px; }
 @media (max-width:820px){ .pb-dress-figs{ max-width:100%; } }
+
+/* =====================================================================
+   FINÁLNÍ SJEDNOCENÍ (web): jedna sada písem a velikostí, jedna sada tlačítek.
+   Nadpisy: Cormorant 500 (h1 56 / h2 40 / h3 22). Text: Plex 16, v kartách 15, poznámky 14, drobné 12.
+   Akcent (kurzíva): Cormorant 22 italic 500. Tlačítka: plné (.solid) a obrysové, nic dalšího.
+   ===================================================================== */
+.pb-root .pb-card h3, .pb-root .pb-qa h3, .pb-root .pb-food-c h3, .pb-root .pb-trio .pb-card h3,
+.pb-root .pb-fact-v, .pb-root .pb-bigcta-t{ font-family:var(--f-head); font-size:var(--t-h3) !important; font-weight:500 !important; line-height:1.2; letter-spacing:.01em; }
+.pb-root .pb-dress-lady-txt{ font-weight:500 !important; text-shadow:0 1px 6px rgba(0,0,0,.5); }
+.pb-root .pb-card p, .pb-root .pb-qa-a p, .pb-root .pb-trio .pb-card p, .pb-root .pb-prices li, .pb-root .pb-t p{ font-size:15px !important; line-height:1.6; }
+.pb-root .pb-t h4{ font-size:var(--t-text) !important; font-weight:600; }
+.pb-root .pb-fact-s, .pb-root .pb-food-note, .pb-root .pb-ps, .pb-root .pb-small, .pb-root .pb-guests-note, .pb-root .pb-rank-note{ font-size:var(--t-small) !important; }
+.pb-root .pb-food-note{ font-weight:400; }
+.pb-root .pb-dress-cap{ font-size:var(--t-micro); }
+.pb-root .pb-btn, .pb-root .pb-btn.ghost{ font:500 14.5px/1 var(--f-body); min-height:46px; padding:0 22px; border-radius:3px; }
+.pb-root .pb-btn.ghost{ border-color:var(--pb-btn); color:var(--pb-btn); background:transparent; }
+.pb-root .pb-paths .pb-btn.ghost{ color:#f3e9d6; border-color:rgba(243,233,214,.55); }
+
+/* Dress code: světlý pruh přes celou šířku (protějšek tmavé sekce o jídle) */
+#dresscode{ background:#EFE6D2; border-top:1px solid var(--pb-line); border-bottom:1px solid var(--pb-line); padding:64px 0; margin:0; }
+#dresscode .pb-dress{ background:none; box-shadow:none; padding:0; border-radius:0; color:var(--pb-ink); }
+#dresscode .pb-dress .eyebrow{ color:var(--pb-brass); }
+#dresscode .pb-dress .pb-h2{ color:var(--pb-ink); }
+#dresscode .pb-dress-text p{ color:var(--pb-ink); }
+#dresscode .pb-dress-text .pb-dress-lead{ color:var(--pb-btn) !important; }
+#dresscode .pb-dress-text .pb-dress-end{ color:var(--pb-ink) !important; }
+#dresscode .pb-dress-text .pb-dress-heels{ color:var(--pb-ink); }
+#dresscode .pb-dress-heels b{ color:var(--pb-btn); }
+#dresscode .pb-ps{ color:var(--pb-muted) !important; border-top:1px solid var(--pb-line); }
+#dresscode .pb-dress-cap{ color:var(--pb-muted); }
+#dresscode .pb-dress-fig img, #dresscode .pb-dress-lady img{ border:1px solid var(--pb-line); box-shadow:0 8px 22px rgba(60,40,10,.18); }
+@media (max-width:820px){ #dresscode{ padding:44px 0; } }
+.pb-root main:has(#dresscode) + footer{ margin-top:0 !important; }
