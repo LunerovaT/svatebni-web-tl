@@ -30,6 +30,7 @@ function Detail({ r }) {
           </ul>
         </div>
       )}
+      {r.comment && <p style={{ margin: "0 0 12px", fontSize: 13.5 }}><b>Vzkaz:</b> {r.comment}</p>}
       {extra.length > 0 && (
         <p style={{ margin: "0 0 12px", fontSize: 13.5 }}>
           <b>Další odpovědi:</b> {extra.map(([k, v]) => `${k}: ${v}`).join(" · ")}
@@ -100,7 +101,6 @@ export default function RsvpOverview() {
   const people = all.length;
   const sleepers = all.filter((p) => p.sleep !== "ne");
   const optCount = (k) => sleepers.filter((p) => (p.sleepRank || []).includes(k)).length;
-  const arrivalCount = (k) => all.filter((p) => p.arrival === k).length;
   const travelCount = (k) => all.filter((p) => p.travel === k).length;
   const players_ = yes.filter((r) => r.wantsGame === "ano").length;
 
@@ -120,7 +120,6 @@ export default function RsvpOverview() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 22 }}>
           <Tile big={people} label="osob přijde" sub={`${yes.length} odpovědí ano · ${rows.length - yes.length} ne`} />
           <Tile big={sleepers.length} label="osob chce přespat" sub={SLEEP_OPTIONS.map(([k]) => `${SLEEP_SHORT[k]} ${optCount(k)}`).join(" · ")} />
-          <Tile big={arrivalCount("patek")} label="osob přijede v pátek" sub={`sobota ${arrivalCount("sobota")} · jindy ${arrivalCount("jindy")}`} />
           <Tile big={travelCount("odvoz")} label="potřebuje odvoz" sub={`auto ${travelCount("auto")} · jinak ${travelCount("jinak")} (počítáno za osoby)`} />
           <Tile big={players_} label="chce hrát hru" />
         </div>
@@ -144,7 +143,7 @@ export default function RsvpOverview() {
             <thead>
               <tr>
                 <th style={th}>Jméno</th>
-                {COLUMNS.filter((c) => c.key !== "guests" && c.key !== "persons").map((c) => <th key={c.key} style={th}>{c.label.replace(" (pořadí preferencí)", "")}</th>)}
+                {COLUMNS.filter((c) => c.key !== "guests" && c.key !== "persons" && c.key !== "comment").map((c) => <th key={c.key} style={th}>{c.label.replace(" (pořadí preferencí)", "")}</th>)}
                 <th style={th}>Osob</th>
                 <th style={th}>Profil</th>
                 <th style={th}>Potvrzeno</th>
@@ -164,9 +163,9 @@ export default function RsvpOverview() {
                       <div style={{ color: "#6b6153", fontSize: 12.5 }}>{r.contact}</div>
                     </td>
                     <td style={{ ...td, color: r.attending === "ano" ? "#2f5a2f" : "#8f2a22" }}>{col("attending")}</td>
-                    <td style={td}>{col("arrival")}</td>
                     <td style={td}>{col("sleep")}</td>
                     <td style={td}>{col("travel")}</td>
+                    <td style={td}>{col("diet")}</td>
                     <td style={td}>{col("wantsGame")}</td>
                     <td style={td}>{col("persons")}</td>
                     <td style={td}>{r.attending === "ano" ? (accounts.has((r.contact || "").toLowerCase()) ? "účet ✓" : "bez účtu") : ""}</td>

@@ -45,7 +45,7 @@ export const sleepText = (r) => (r.attending !== "ano" ? "" : sleepOf(peopleOf(r
 export const arrivalText = (r) => (r.attending !== "ano" ? "" : arrivalOf(peopleOf(r)[0]));
 export const travelText = (r) => (r.attending !== "ano" ? "" : travelOf(peopleOf(r)[0]));
 // jedna osoba na řádek: „Teta Marie – příjezd V pátek; přespání: celý pokoj; doprava: Autem“
-export const personLine = (p) => `${p.name} – příjezd: ${arrivalOf(p)}; přespání: ${sleepOf(p)}; doprava: ${travelOf(p)}${p.diet ? `; dieta: ${p.diet}` : ""}`;
+export const personLine = (p) => `${p.name} – přespání: ${sleepOf(p)}; doprava: ${travelOf(p)}${p.diet ? `; dieta: ${p.diet}` : ""}`;
 export const dietText = (r) => (r.attending !== "ano" ? "" : peopleOf(r).filter((p) => p.diet).map((p) => (p.main ? p.diet : `${p.name}: ${p.diet}`)).join(" | "));
 export const guestsText = (r) => peopleOf(r).slice(1).map(personLine).join(" | ");
 
@@ -53,7 +53,6 @@ export const guestsText = (r) => peopleOf(r).slice(1).map(personLine).join(" | "
 export const COLUMNS = [
   { key: "attending", label: "Účast", get: (r) => (r.attending === "ano" ? "Přijde" : "Nepřijde") },
   { key: "persons", label: "Osob", get: (r) => (r.attending === "ano" ? String(persons(r)) : "0") },
-  { key: "arrival", label: "Příjezd", get: arrivalText },
   { key: "sleep", label: "Přespání (pořadí preferencí)", get: sleepText },
   { key: "travel", label: "Doprava", get: travelText },
   { key: "diet", label: "Dietní omezení", get: dietText },

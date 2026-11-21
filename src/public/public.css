@@ -331,7 +331,7 @@ nav.links a.pb-nav-game:hover, nav.links a.pb-nav-game.active{ background:var(--
 .pb-root .pb-form .pb-guest input:focus, .pb-root .pb-form .pb-guest select:focus{ border-color:var(--pb-btn); outline:none; }
 
 /* ---- jídlo na úvodní stránce ---- */
-.pb-food{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:980px; }
+.pb-food{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; max-width:980px; }
 .pb-food-c{ border:1px solid rgba(201,169,98,.35); background:rgba(0,0,0,.18); border-radius:4px; padding:20px 22px; }
 .pb-root .pb-food-c h3{ font-family:var(--f-head); font-size:var(--t-h3); font-weight:600; color:#EDE6D6; margin:0 0 8px; letter-spacing:.01em; }
 .pb-root .pb-food-c p{ margin:0; font-size:var(--t-text); line-height:1.65; color:#d6ccb6; }

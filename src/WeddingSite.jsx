@@ -95,7 +95,7 @@ function SleepChecks({ value, onChange }) {
   );
 }
 
-const newGuest = () => ({ name: "", arrival: "same", arrivalOther: "", sleep: "ano", sleepRank: [], travel: "same", travelFrom: "", dietYes: false, diet: "" });
+const newGuest = () => ({ name: "", sleep: "ano", sleepRank: [], travel: "same", travelFrom: "", dietYes: false, diet: "" });
 
 function useHashRoute() {
   const [page, setPage] = useState(() => location.hash.replace("#/", "") || "home");
@@ -127,8 +127,6 @@ export default function WeddingSite() {
   const [sleepRank, setSleepRank] = useState([]); // zaškrtnuté možnosti přespání (v poli sleepRank kvůli pravidlům databáze)
   const [travel, setTravel] = useState("auto");
   const [travelFrom, setTravelFrom] = useState("");
-  const [arrival, setArrival] = useState("patek");
-  const [arrivalOther, setArrivalOther] = useState("");
   const [dietYes, setDietYes] = useState(false);
   const [diet, setDiet] = useState("");
   const [comment, setComment] = useState("");
@@ -179,12 +177,8 @@ export default function WeddingSite() {
           diet: dietYes ? diet.trim().slice(0, 300) : "",
           travel,
           travelFrom: travel === "odvoz" ? travelFrom.trim().slice(0, 120) : "",
-          arrival,
-          arrivalOther: arrival === "jindy" ? arrivalOther.trim().slice(0, 200) : "",
           guests: guests.slice(0, 8).map((g) => ({
             name: g.name.trim().slice(0, 120),
-            arrival: g.arrival,
-            arrivalOther: g.arrival === "jindy" ? g.arrivalOther.trim().slice(0, 200) : "",
             sleep: g.sleep,
             sleepRank: g.sleep === "ano" ? g.sleepRank : [],
             travel: g.travel,
@@ -300,7 +294,7 @@ export default function WeddingSite() {
     try { localStorage.removeItem("rsvp_sent"); } catch { /* bez ukládání */ }
     setRsvpSent(false);
     setRsvpDone(false); setRsvpName(""); setRsvpEmail(""); setRsvpPw(""); setRsvpAttending("ano"); setRsvpGame("ano");
-    setSleepWants("ano"); setSleepRank([]); setTravel("auto"); setTravelFrom(""); setArrival("patek"); setArrivalOther(""); setGuests([]); setDietYes(false); setDiet(""); setComment(""); setRsvpError("");
+    setSleepWants("ano"); setSleepRank([]); setTravel("auto"); setTravelFrom(""); setGuests([]); setDietYes(false); setDiet(""); setComment(""); setRsvpError("");
     go("home");
   };
 
@@ -681,15 +675,6 @@ export default function WeddingSite() {
                     </div>
                     {rsvpAttending === "ano" && (<>
                     <div className="field">
-                      <label>Kdy přijedu</label>
-                      <select value={arrival} onChange={(e) => setArrival(e.target.value)}>
-                        <option value="patek">Nejlépe v pátek</option>
-                        <option value="sobota">V sobotu ráno</option>
-                        <option value="jindy">Jindy</option>
-                      </select>
-                      {arrival === "jindy" && <input type="text" maxLength={200} value={arrivalOther} onChange={(e) => setArrivalOther(e.target.value)} placeholder="Kdy zhruba?" style={{ marginTop: 6 }} />}
-                    </div>
-                    <div className="field">
                       <label>Chci přespat</label>
                       <select value={sleepWants} onChange={(e) => setSleepWants(e.target.value)}>
                         <option value="ano">Ano</option>
@@ -728,16 +713,6 @@ export default function WeddingSite() {
                           <div className="pb-guest-head">
                             <input type="text" maxLength={120} value={g.name} onChange={(e) => setGuest(i, { name: e.target.value })} placeholder={"Jméno a příjmení osoby " + (i + 2)} />
                             <button type="button" className="pb-guest-x" aria-label="Odebrat osobu" onClick={() => removeGuest(i)}>×</button>
-                          </div>
-                          <div className="pb-gf">
-                            <label>Kdy přijede</label>
-                            <select value={g.arrival} onChange={(e) => setGuest(i, { arrival: e.target.value })}>
-                              <option value="same">Stejně jako já</option>
-                              <option value="patek">Nejlépe v pátek</option>
-                              <option value="sobota">V sobotu ráno</option>
-                              <option value="jindy">Jindy</option>
-                            </select>
-                            {g.arrival === "jindy" && <input type="text" maxLength={200} value={g.arrivalOther} onChange={(e) => setGuest(i, { arrivalOther: e.target.value })} placeholder="Kdy zhruba?" />}
                           </div>
                           <div className="pb-gf">
                             <label>Přespání</label>

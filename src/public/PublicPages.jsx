@@ -23,7 +23,8 @@ function Fact({ k, v, sub, href, onClick }) {
 function Timeline() {
   return (
       <div className="pb-timeline">
-        <div className="pb-t"><div className="pb-t-time"><b>pá 30. 7.</b></div><div><h4>Příjezd hostů</h4><p>Příjezd a ubytování. Společné jídlo na pátek nezajišťujeme.</p></div></div>
+        <div className="pb-t"><div className="pb-t-time"><b>pá 30. 7.</b></div><div><h4>Chystání akce</h4><p>Příprava areálu. Páteční příjezd není oficiální součástí programu, konkrétní lidi oslovíme sami.</p></div></div>
+        <div className="pb-t"><div className="pb-t-time"><b>so 31. 7.</b> <Soon>čas doplníme</Soon></div><div><h4>Příjezd hostů</h4><p>Příjezd a ubytování.</p></div></div>
         <div className="pb-t"><div className="pb-t-time"><Soon>čas doplníme</Soon></div><div><h4>Obřad</h4><p>Slavnostní chvíle, kvůli které jsme tady.</p></div></div>
         <div className="pb-t"><div className="pb-t-time"><Soon>čas doplníme</Soon></div><div><h4>Hostina a večerní program</h4><p>Jídlo, pití, tanec a také malé pátrání pro ty, kdo budou chtít.</p></div></div>
         <div className="pb-t"><div className="pb-t-time"><b>ne 1. 8., 12:00</b></div><div><h4>Konec nájmu</h4><p>Areál musí být vyklizený. Kolem 10:00 se začneme balit a uklízet.</p></div></div>
@@ -79,10 +80,6 @@ export function HomePage({ go, choosePath, chosenPath, rsvpDone }) {
             <h2 className="display">Jak to bude s jídlem</h2>
           </div>
           <div className="pb-food">
-            <div className="pb-food-c">
-              <h3>Pátek</h3>
-              <p>Na páteční odpoledne a večer společné stravování nezajišťujeme. Pokud dorazíte už v pátek, vezměte si prosím vlastní jídlo podle toho, na co budete mít chuť.</p>
-            </div>
             <div className="pb-food-c">
               <h3>Sobota</h3>
               <p>O jídlo je postaráno. Pro všechny hosty bude připravený společný oběd a večer bohatý raut. Mezi obědem a rautem další společné jídlo plánované není.</p>
