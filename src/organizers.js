@@ -3,7 +3,8 @@
 // aby se cizímu přihlášenému účtu místo rozbité stránky ukázala srozumitelná hláška.
 export const ORGANIZER_EMAILS = [
   "tereza.luner@gmail.com",
-  "DOPLNIT-LUKASUV-EMAIL@example.com",
+  "lunerova.tereza@seznam.cz",
+  "lukassnopek113@gmail.com",
 ];
 
 export const isOrganizerEmail = (email) =>
