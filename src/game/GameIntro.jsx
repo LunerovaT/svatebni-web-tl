@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { INTRO_SCENES } from "../story/intro.js";
-import fallbackBg from "../assets/intro/kufr.webp";
+import fallbackBg from "../assets/intro/stul.webp";
 
 // Celoobrazovkový úvod: scény se zatmívají, řádky naskakují postupně. Klepnutím se zobrazí všechny řádky scény.
 export default function GameIntro({ onDone, scenes = INTRO_SCENES, finishLabel = "Do hry" }) {
