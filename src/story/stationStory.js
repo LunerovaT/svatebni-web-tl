@@ -33,7 +33,7 @@ const RAW = {
       "Eleanor se narodila jako Eliška Vránová. V roce 1948 opustila Československo a začala nový život.",
     ] },
     outro: { kicker: "Stanoviště 1 · Indicie", title: "Nezapomenuté kořeny", lines: [
-      "Po letech znovu našla svou evropskou rodinu. Krátce před smrtí nechala ukrýt důležitý dokument.",
+      "Po letech našla svou evropskou rodinu a začala přehodnocovat, komu připadne dědictví.",
     ] },
   },
   s02: {
@@ -41,8 +41,8 @@ const RAW = {
       "Správa milionového majetku vyžaduje důvěru. Eleanor ji svěřila lidem ze svého nejbližšího okolí.",
       "Pak si ale všimla nesrovnalostí v účetnictví.",
     ] },
-    outro: { kicker: "Stanoviště 2 · Indicie", title: "Podezřelé převody", lines: [
-      "Z účtů zmizelo 120 000 dolarů. Eleanor začala pátrat, kdo za převody stojí.",
+    outro: { kicker: "Stanoviště 2 · Indicie", title: "Nesrovnalosti", lines: [
+      "Účty nelžou. Z nich zmizelo 120 000 dolarů a platby vedou ke společnosti A.B. Consulting.",
     ] },
   },
   s03: {
@@ -58,7 +58,8 @@ const RAW = {
       "Pět podezřelých. Protichůdné výpovědi. Co se odehrálo před Eleanořinou smrtí?",
     ] },
     outro: { kicker: "Stanoviště 4 · Indicie", title: "Někdo něco tají", lines: [
-      "Eleanor chtěla změnit závěť a prověřit finance. Ve 23:17 zazněl výkřik. Zmizelo těžítko a Agnes zřejmě lhala.",
+      "Eleanor chtěla změnit závěť a prověřit finance. Ve 23:17 zazněl výkřik, zmizelo těžítko a Agnes zřejmě lhala.",
+      "A.B. Consulting má vazbu na kancelář Edwarda Blackwooda.",
     ] },
   },
 };

@@ -22,7 +22,7 @@ export const POINTS = { suspect: 2, motive: 1, evidence: 1 };
 export const FINAL_STORY = {
   intro: { kicker: "Stanoviště 5 · Poslední svědek", title: "Pravda na dosah", lines: ["Agnes ukryla důkazy, které mohou změnit celé vyšetřování."] },
   opened: { kicker: "Stanoviště 5 · Poslední svědek", title: "Poslední důkazy", lines: ["Agnes vraždu viděla. Ukryla těžítko s krvavým otiskem a další důkazy."] },
-  solved: { kicker: "Případ uzavřen", title: "Případ uzavřen", lines: ["Vrahem byl Edward Blackwood. Eleanor chtěla odhalit jeho podvody a změnit závěť. Její majetek měl připadnout evropské rodině – vám."] },
+  solved: { kicker: "Případ uzavřen", title: "Případ uzavřen", lines: ["Vrahem byl Edward Blackwood. Eleanor chtěla odhalit jeho podvody a změnit závěť. Její majetek měl připadnout evropské rodině. A tou rodinou jste vy."] },
 };
 
 export const REVEAL = {
