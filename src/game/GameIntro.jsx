@@ -29,7 +29,7 @@ export default function GameIntro({ onDone, scenes = INTRO_SCENES, finishLabel =
   return createPortal(
     <div className={"gi" + (sc.low ? " gi-low" : "")} role="dialog" aria-label="Úvod do hry" onClick={() => !allShown && setN(99)}>
       <button className="gi-skip" onClick={(e) => { e.stopPropagation(); onDone(); }}>Přeskočit</button>
-      <div key={sc.bg} className={"gi-bg" + (out && (scenes[i + 1]?.bg || fallbackBg) !== sc.bg ? " out" : "")} style={{ backgroundImage: `url(${sc.bg})`, backgroundPosition: sc.pos || "50% 50%", "--z": sc.zoom || 1.1 }} />
+      <div key={sc.bg} className={"gi-bg" + (out && (scenes[i + 1]?.bg || fallbackBg) !== sc.bg ? " out" : "")} style={{ "--bg": `url("${sc.bg}")`, "--bgp": `url("${sc.bgp || sc.bg}")`, "--pos": sc.pos || "50% 50%", "--posp": sc.posp || sc.pos || "50% 50%", "--z": sc.zoom || 1.1 }} />
       <div className="gi-shade" />
       <div className={"gi-scene" + (out ? " out" : "")} key={i}>
         <p className="gi-kicker">{sc.kicker}</p>

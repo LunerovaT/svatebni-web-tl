@@ -143,6 +143,7 @@ export default function WeddingSite() {
   const [rsvpBusy, setRsvpBusy] = useState(false);
   const [rsvpError, setRsvpError] = useState("");
   const [rsvpDone, setRsvpDone] = useState(false);
+  const [needRsvp, setNeedRsvp] = useState(false); // sem nás přesměrovala hra, protože host ještě není přihlášený
   const [rsvpAgain, setRsvpAgain] = useState(false); // už potvrzeno, ale host chce odeslat odpověď za někoho dalšího
 
   const submitRsvp = async (e) => {
@@ -207,6 +208,7 @@ export default function WeddingSite() {
       setRsvpSent(true);
       setRsvpDone(true);
       setRsvpAgain(false);
+      setNeedRsvp(false);
     } catch (err) {
       setRsvpError("Něco se nepovedlo, zkuste to prosím znovu. (" + err.message + ")");
     } finally {
@@ -302,7 +304,7 @@ export default function WeddingSite() {
     setAuthMode("login");
     try { localStorage.removeItem("rsvp_sent"); } catch { /* bez ukládání */ }
     setRsvpSent(false);
-    setRsvpDone(false); setRsvpAgain(false); setRsvpName(""); setRsvpEmail(""); setRsvpPw(""); setRsvpAttending("ano"); setRsvpGame("ano");
+    setNeedRsvp(false); setRsvpDone(false); setRsvpAgain(false); setRsvpName(""); setRsvpEmail(""); setRsvpPw(""); setRsvpAttending("ano"); setRsvpGame("ano");
     setSleepWants("ano"); setSleepRank([]); setTravel("auto"); setTravelFrom(""); setGuests([]); setDietYes(false); setDiet(""); setComment(""); setRsvpError("");
     go("home");
   };
@@ -455,6 +457,10 @@ export default function WeddingSite() {
     } catch { stationQrKey = k; }
   }
   const isGameScreen = page === "hra" || page === "uvod" || page === "pribeh" || page === "pripad" || page === "mapa" || page === "vysetrovani" || stationIndex !== null;
+  // kdokoli bez účtu, kdo klikne na cokoli ve hře, jde nejdřív na „Potvrdit účast“ (tam se zakládá účet i profil hráče)
+  useEffect(() => {
+    if (isGameScreen && page !== "pribeh" && !authLoading && !myPlayerId) { setNeedRsvp(true); go("rsvp"); }
+  }, [page, authLoading, myPlayerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const gameBackLabel = "⌂";
 
@@ -673,6 +679,8 @@ export default function WeddingSite() {
               <div style={{ marginBottom: 18 }}>
                 <h1 className="display pb-h1s">Potvrdit účast</h1>
                 <p className="lede">Dejte nám vědět, zda dorazíte, kde budete spát a jak se k nám dopravíte, a jestli se přidáte i do hry. Termín: {DATES.long}, {VENUE.name}.</p>
+                {!authUid && needRsvp && <p className="pb-guests-note" style={{ marginTop: 10 }}>Do hry se dostanete po potvrzení účasti. Stačí vyplnit dotazník a u otázky „Chci hrát detektivku“ nechat Ano, profil hráče se vytvoří sám.</p>}
+                {!authUid && <p className="pb-guests-note" style={{ marginTop: 8 }}>Už máte účet? <button type="button" className="pb-linkbtn" onClick={() => go("profil")}>Přihlásit se</button></p>}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%" }}>
                 {!rsvpDone && (!rsvpConfirmed || rsvpAgain) ? (
@@ -807,6 +815,7 @@ export default function WeddingSite() {
                         ? "Vaše potvrzení účasti i profil jsou založené. V sekci Můj profil se přihlásíte e-mailem a heslem a uvidíte tam souhrn" + (rsvpGame === "ano" ? " i hru, jakmile budou týmy hotové." : ".")
                         : "Vaše potvrzení účasti je zaznamenané."}
                     </p>
+                    {rsvpAttending === "ano" && rsvpGame === "ano" && <button type="button" className="pb-btn solid" style={{ marginTop: 14 }} onClick={() => go("hra")}>Přejít do hry</button>}
                   </div>
                 )}
               </div>
@@ -838,40 +847,6 @@ export default function WeddingSite() {
                 <button type="button" className="pb-linkbtn" onClick={resetPassword}>Zapomněla/a jsem heslo</button>
                 <button type="button" className="pb-linkbtn" onClick={() => go("rsvp")}>Ještě jste nepotvrdili účast? Potvrdit účast</button>
               </form>
-            </div>
-          </section>
-        )}
-
-        {page === "hra" && !myPlayerId && !authLoading && (
-          <section className="block" style={{ paddingTop: 40 }}>
-            <div className="wrap">
-              <div className="case-bg">
-                <div className="case-card tilt-l">
-                  <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
-                  <p className="case-label">přihlášení do hry</p>
-                  <h1 className="display" style={{ fontSize: "clamp(28px,5vw,40px)", margin: "0 0 14px" }}>Přihlaste se</h1>
-                  <p className="lede" style={{ marginBottom: 24, fontSize: 14 }}>
-                    Použijte e-mail a heslo, které jste zadali při potvrzení účasti. Účet vzniká právě tam, takže hrát mohou jen potvrzení hosté, kteří zaškrtli, že chtějí hrát.
-                  </p>
-                  <form onSubmit={submitLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div className="field">
-                      <label>E-mail</label>
-                      <input type="email" autoComplete="username" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="jana@example.cz" />
-                    </div>
-                    <div className="field">
-                      <label>Heslo</label>
-                      <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                    </div>
-                    {formInfo && <p style={{ color: "#3a5a3a", fontSize: 13.5, margin: 0 }}>{formInfo}</p>}
-                    {formError && <p style={{ color: "#a8342a", fontSize: 13.5, margin: 0 }}>{formError}</p>}
-                    <button type="submit" className="btn" disabled={formBusy} style={{ alignSelf: "flex-start", marginTop: 4 }}>
-                      {formBusy ? "Chvilku…" : "Přihlásit se"}
-                    </button>
-                  </form>
-                  <button onClick={() => go("rsvp")} className="g-linkbtn" style={{ marginTop: 20 }}>Ještě nemám účet: potvrdit účast</button>
-                  <button onClick={resetPassword} className="g-linkbtn" style={{ marginTop: 10, display: "block" }}>Zapomněla/a jsem heslo</button>
-                </div>
-              </div>
             </div>
           </section>
         )}

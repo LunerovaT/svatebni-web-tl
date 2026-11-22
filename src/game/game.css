@@ -339,7 +339,7 @@
 .gi-title{ font:500 clamp(28px,5vw,38px)/1.1 'Cormorant Garamond', serif; margin:0; color:#f4e6bd; animation:gi-in 1.2s ease both; }
 .gi-sub{ font:500 12px/1 'IBM Plex Sans', sans-serif; letter-spacing:.2em; text-transform:uppercase; color:#b98f4a; margin:8px 0 6px; animation:gi-in 1.2s ease both; }
 .gi-scene .gi-line{ font-size:clamp(19px,3.4vw,25px); }
-.gi-bg{ position:absolute; inset:0; background-size:cover; transform-origin:50% 50%; opacity:.9; animation:gi-zoom 14s ease-out both, gi-bgin 1.4s ease both; transition:opacity .6s ease; }
+.gi-bg{ position:absolute; inset:0; background-size:cover; background-image:var(--bg); background-position:var(--pos); transform-origin:50% 50%; opacity:.9; animation:gi-zoom 14s ease-out both, gi-bgin 1.4s ease both; transition:opacity .6s ease; }
 .gi-bg.out{ opacity:0; }
 .gi-shade{ position:absolute; inset:0; background:radial-gradient(ellipse 70% 60% at 50% 45%, rgba(6,3,2,.28), rgba(6,3,2,.8) 90%); pointer-events:none; }
 .gi-scene, .gi-skip, .gi-dots{ z-index:2; }
@@ -350,5 +350,8 @@
 
 /* scéna s textem dole – nechá volný střed obrazu (obličeje, předměty) */
 .gi.gi-low{ place-items:end center; padding-bottom:54px; }
-.gi-low .gi-scene{ padding:34px 40px 18px; background:radial-gradient(ellipse 70% 75% at 50% 62%, rgba(10,5,3,.78) 0%, rgba(10,5,3,.55) 60%, rgba(10,5,3,0) 100%); }
+.gi-low .gi-scene{ padding:34px 40px 18px; background:radial-gradient(ellipse 56% 60% at 50% 58%, rgba(10,5,3,.8) 0%, rgba(10,5,3,.6) 55%, rgba(10,5,3,0) 100%); }
 @media (max-height:640px){ .gi.gi-low{ padding-bottom:24px; } }
+
+/* mobile first: na výšku se použije svislá verze obrázku (bgp) a vlastní výřez (posp) */
+@media (max-aspect-ratio:4/5){ .gi-bg{ background-image:var(--bgp); background-position:var(--posp); } }
