@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import {
   collection, addDoc, setDoc, query, where, doc, updateDoc, onSnapshot, serverTimestamp, deleteField, runTransaction,
 } from "firebase/firestore";
@@ -226,6 +226,7 @@ export default function WeddingSite() {
   const [authUid, setAuthUid] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [playerChecked, setPlayerChecked] = useState(false);
+  const profileTried = useRef({});
   const [myPlayer, setMyPlayer] = useState(null); // živý dokument hráče (jméno, teamId, homeClueSolved...)
   const [myTeam, setMyTeam] = useState(null); // živá data týmu (postup, jméno)
   const [myRsvp, setMyRsvp] = useState(undefined); // souhrn hosta (undefined = načítá se, null = žádná odpověď)
@@ -310,6 +311,15 @@ export default function WeddingSite() {
   useEffect(() => {
     if (!authUid) { setMyPlayer(null); return; }
     const unsub = onSnapshot(doc(db, "players", authUid), (snap) => {
+      if (!snap.exists() && !profileTried.current[authUid] && auth.currentUser?.uid === authUid) {
+        // účet existuje, ale chybí profil (např. účet založený mimo potvrzení účasti) → založíme ho, ať se přihlášení nevrací na formulář
+        profileTried.current[authUid] = true;
+        const em = (auth.currentUser.email || "").toLowerCase();
+        setDoc(doc(db, "players", authUid), {
+          name: auth.currentUser.displayName || em.split("@")[0] || "Host", contact: em, wantsGame: "ne", teamId: null, homeClueSolved: false, createdAt: serverTimestamp(),
+        }).catch((err) => { console.warn("Profil se nepodařilo založit:", err); setPlayerChecked(true); });
+        return;
+      }
       setMyPlayer(snap.exists() ? { id: snap.id, ...snap.data() } : null);
       setPlayerChecked(true);
     }, (err) => { console.warn("Profil se nepodařilo načíst:", err); setPlayerChecked(true); });
