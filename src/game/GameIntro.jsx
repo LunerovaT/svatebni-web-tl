@@ -27,7 +27,7 @@ export default function GameIntro({ onDone, scenes = INTRO_SCENES, finishLabel =
   };
 
   return createPortal(
-    <div className="gi" role="dialog" aria-label="Úvod do hry" onClick={() => !allShown && setN(99)}>
+    <div className={"gi" + (sc.low ? " gi-low" : "")} role="dialog" aria-label="Úvod do hry" onClick={() => !allShown && setN(99)}>
       <button className="gi-skip" onClick={(e) => { e.stopPropagation(); onDone(); }}>Přeskočit</button>
       <div key={sc.bg} className={"gi-bg" + (out && (scenes[i + 1]?.bg || fallbackBg) !== sc.bg ? " out" : "")} style={{ backgroundImage: `url(${sc.bg})`, backgroundPosition: sc.pos || "50% 50%", "--z": sc.zoom || 1.1 }} />
       <div className="gi-shade" />
@@ -41,7 +41,7 @@ export default function GameIntro({ onDone, scenes = INTRO_SCENES, finishLabel =
           {allShown && <button className="gi-next" onClick={(e) => { e.stopPropagation(); next(); }}>{last ? finishLabel : "Dál"}</button>}
         </div>
       </div>
-      <div className="gi-dots" aria-hidden="true">{scenes.map((_, k) => <span key={k} className={k === i ? "on" : k < i ? "past" : ""} />)}</div>
+      {scenes.length <= 14 && <div className="gi-dots" aria-hidden="true">{scenes.map((_, k) => <span key={k} className={k === i ? "on" : k < i ? "past" : ""} />)}</div>}
     </div>,
     document.body
   );

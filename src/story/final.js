@@ -18,7 +18,17 @@ export const SOLUTION = {
 // Bodování: pachatel 2, motiv 1, důkaz 1 (jen pokud je nastavený). Při shodě rozhoduje dřívější zapečetění.
 export const POINTS = { suspect: 2, motive: 1, evidence: 1 };
 
+// Filmové titulky finále (zapojí se po dokončení stanoviště 5): úvod → po otevření důkazů → po správném obvinění.
+export const FINAL_STORY = {
+  intro: { kicker: "Finále · Poslední svědek", title: "Poslední svědek", lines: ["Agnes zanechala schránku s důkazy, které se nikdy nedostaly do oficiálního vyšetřování.", "Pravda je konečně na dosah."] },
+  opened: { kicker: "Finále", title: "Všechno do sebe zapadá", lines: ["Vražedná zbraň. Otisky prstů. Skryté finance. Poslední vůle.", "Prohlédněte si důkazy a označte vraha."] },
+  solved: { kicker: "Případ uzavřen", title: "Vrahem byl Edward Blackwood", lines: [
+    "Eleanor chtěla odhalit jeho podvody a zbavit ho kontroly nad svým majetkem. Proto ji umlčel.",
+    "Agnes však uchovala důkazy. A Eleanořina poslední vůle se konečně dostala k evropské rodině.",
+  ] },
+};
+
 export const REVEAL = {
   title: "Případ uzavřen",
-  text: "Vysvětlení celého případu doplníme, až bude hotový scénář.",
+  text: FINAL_STORY.solved.lines.join(" "),
 };

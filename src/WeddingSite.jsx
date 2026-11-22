@@ -34,6 +34,12 @@ import { Pushpin, ClueTag, Polaroid, ConfidentialStamp, MapIcon, Footprints, Pro
 import MapPage from "./MapPage.jsx";
 import HomeTask from "./hometask/HomeTask.jsx";
 import GameIntro from "./game/GameIntro.jsx";
+import { INTRO_SCENES } from "./story/intro.js";
+import { SUSPECT_SCENES } from "./story/suspectsIntro.js";
+import { STATION_STORY } from "./story/stationStory.js";
+
+// Testovací přehrání celého příběhu v kuse (jen v testovacím režimu): úvod → podezřelí → intra a outra stanovišť 1–4.
+const FULL_STORY_SCENES = [...INTRO_SCENES, ...SUSPECT_SCENES, ...["s01", "s02", "s03", "s04"].flatMap((id) => [STATION_STORY[id].intro, STATION_STORY[id].outro])];
 import { STATIONS, FINAL_REQUIRES, doneCountOf } from "./stations/stations.js";
 import "./game/game.css";
 import TestPanel, { isTestMode } from "./game/TestPanel.jsx";
@@ -137,6 +143,7 @@ export default function WeddingSite() {
   const [rsvpBusy, setRsvpBusy] = useState(false);
   const [rsvpError, setRsvpError] = useState("");
   const [rsvpDone, setRsvpDone] = useState(false);
+  const [rsvpAgain, setRsvpAgain] = useState(false); // už potvrzeno, ale host chce odeslat odpověď za někoho dalšího
 
   const submitRsvp = async (e) => {
     e.preventDefault();
@@ -199,6 +206,7 @@ export default function WeddingSite() {
       try { localStorage.setItem("rsvp_sent", "1"); } catch { /* bez ukládání */ }
       setRsvpSent(true);
       setRsvpDone(true);
+      setRsvpAgain(false);
     } catch (err) {
       setRsvpError("Něco se nepovedlo, zkuste to prosím znovu. (" + err.message + ")");
     } finally {
@@ -293,7 +301,7 @@ export default function WeddingSite() {
     setAuthMode("login");
     try { localStorage.removeItem("rsvp_sent"); } catch { /* bez ukládání */ }
     setRsvpSent(false);
-    setRsvpDone(false); setRsvpName(""); setRsvpEmail(""); setRsvpPw(""); setRsvpAttending("ano"); setRsvpGame("ano");
+    setRsvpDone(false); setRsvpAgain(false); setRsvpName(""); setRsvpEmail(""); setRsvpPw(""); setRsvpAttending("ano"); setRsvpGame("ano");
     setSleepWants("ano"); setSleepRank([]); setTravel("auto"); setTravelFrom(""); setGuests([]); setDietYes(false); setDiet(""); setComment(""); setRsvpError("");
     go("home");
   };
@@ -436,7 +444,7 @@ export default function WeddingSite() {
       stationQrKey = k || sessionStorage.getItem(`qr_${stationIndex}`);
     } catch { stationQrKey = k; }
   }
-  const isGameScreen = page === "hra" || page === "uvod" || page === "pripad" || page === "mapa" || page === "vysetrovani" || stationIndex !== null;
+  const isGameScreen = page === "hra" || page === "uvod" || page === "pribeh" || page === "pripad" || page === "mapa" || page === "vysetrovani" || stationIndex !== null;
 
   const gameBackLabel = "⌂";
 
@@ -453,7 +461,7 @@ export default function WeddingSite() {
         onContinue={() => go("hra")}
       />
       {isTestMode() && (
-        <TestPanel stationIndex={stationIndex} stationTitle={stationIndex !== null ? (STATIONS[stationIndex]?.title || STATIONS[stationIndex]?.name) : null}
+        <TestPanel onPlayStory={() => go("pribeh")} stationIndex={stationIndex} stationTitle={stationIndex !== null ? (STATIONS[stationIndex]?.title || STATIONS[stationIndex]?.name) : null}
                    hasTeam={!!myTeam?.id} isLoggedIn={!!myPlayerId} revealed={!!myTeam?.revealed} {...testActions} />
       )}
       </>
@@ -639,7 +647,7 @@ export default function WeddingSite() {
       )}
 
       {isGameScreen && isTestMode() && (
-        <TestPanel stationIndex={stationIndex} stationTitle={stationIndex !== null ? (STATIONS[stationIndex]?.title || STATIONS[stationIndex]?.name) : null}
+        <TestPanel onPlayStory={() => go("pribeh")} stationIndex={stationIndex} stationTitle={stationIndex !== null ? (STATIONS[stationIndex]?.title || STATIONS[stationIndex]?.name) : null}
                    hasTeam={!!myTeam?.id} isLoggedIn={!!myPlayerId} revealed={!!myTeam?.revealed} {...testActions} />
       )}
       <main className={isGameScreen ? "game-shell" : ""}>
@@ -657,7 +665,7 @@ export default function WeddingSite() {
                 <p className="lede">Dejte nám vědět, zda dorazíte, kde budete spát a jak se k nám dopravíte, a jestli se přidáte i do hry. Termín: {DATES.long}, {VENUE.name}.</p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%" }}>
-                {!rsvpDone ? (
+                {!rsvpDone && (!rsvpConfirmed || rsvpAgain) ? (
                   <form onSubmit={submitRsvp} className="pb-form">
                     <div className="field">
                       <label>Jméno a příjmení</label>
@@ -772,6 +780,15 @@ export default function WeddingSite() {
                       {rsvpBusy ? "Chvilku…" : "Potvrdit účast"}
                     </button>
                   </form>
+                ) : !rsvpDone ? (
+                  <div className="pb-thanks">
+                    <p style={{ margin: "0 0 8px", fontWeight: 500 }}>Vaše účast už je potvrzená{myRsvp?.name ? `, ${myRsvp.name}` : ""}.</p>
+                    <p style={{ margin: "0 0 14px", fontSize: 14.5, color: "#6b6153" }}>Odpověď znovu odesílat nemusíte. Souhrn a případné změny najdete v sekci Můj profil. Pokud se chcete změnit, napište nám.</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+                      <button type="button" className="pb-btn solid" onClick={() => go("profil")}>Otevřít můj profil</button>
+                      <button type="button" className="pb-linkbtn" onClick={() => setRsvpAgain(true)} style={{ background: "none", border: 0, padding: 0, color: "#6b6153", textDecoration: "underline", cursor: "pointer", font: "inherit", fontSize: 14 }}>Potvrdit účast za někoho dalšího</button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="pb-thanks">
                     <p style={{ margin: "0 0 8px", fontWeight: 500 }}>Díky, {rsvpName}{guests.length > 0 ? ` a další (${guests.length})` : ""}!</p>
@@ -940,6 +957,7 @@ export default function WeddingSite() {
         )}
 
         {page === "uvod" && myPlayerId && <GameIntro onDone={() => go("hra")} />}
+        {page === "pribeh" && isTestMode() && <GameIntro scenes={FULL_STORY_SCENES} finishLabel="Hotovo" onDone={() => go(myPlayerId ? "hra" : "home")} />}
 
         {page === "pripad" && myPlayerId && myTeam && (
           <section className="block">

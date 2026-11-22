@@ -20,6 +20,8 @@ import boxOpen from "./assets/ev/box_open.webp";
 import folderTop from "./assets/ev/folder_top.webp";
 import stamp03 from "./assets/ev/stamp_03.webp";
 import finaleBg from "./assets/ev/books.webp";
+import GameIntro from "./game/GameIntro.jsx";
+import { STATION_STORY } from "./story/stationStory.js";
 import { SUSPECTS } from "./story/suspects.js";
 
 // obrázky dokumentů podle klíče evidence.docImage v stations.js (stations.js zůstává bez importů obrázků kvůli testům v Node)
@@ -256,7 +258,10 @@ function PuzzleStation({ station, stationIndex, total, isDone, onComplete, onGoO
   const [words, setWords] = useState(() => Array((station.answerWords || []).length).fill(""));
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const [phase, setPhase] = useState(isDone ? "solved" : "form");   // form | anim | solved
+  const story = STATION_STORY[station.id];
+  const introKey = `st_intro_${station.id}`;
+  const introSeen = () => { try { return localStorage.getItem(introKey) === "1"; } catch { return true; } };
+  const [phase, setPhase] = useState(isDone ? "solved" : story?.intro && !introSeen() ? "intro" : "form");   // intro | form | anim | finale | outro | solved
   const [saveState, setSaveState] = useState(isDone ? "saved" : "idle");
   const [appear, setAppear] = useState(false);
   const [qrOk, setQrOk] = useState(false);
@@ -281,9 +286,13 @@ function PuzzleStation({ station, stationIndex, total, isDone, onComplete, onGoO
     catch { setSaveState("error"); }
   };
 
+  const toOutro = () => {
+    window.scrollTo({ top: 0 });
+    if (story?.outro) setPhase("outro"); else { setAppear(true); setPhase("solved"); }
+  };
   const afterAnim = () => {
     window.scrollTo({ top: 0 });
-    if (station.evidence?.finale) setPhase("finale"); else { setAppear(true); setPhase("solved"); }
+    if (station.evidence?.finale) setPhase("finale"); else toOutro();
   };
 
   const submit = async (e) => {
@@ -313,7 +322,7 @@ function PuzzleStation({ station, stationIndex, total, isDone, onComplete, onGoO
           {phase === "solved" ? (
             <EvidenceCard station={station} saveState={saveState} onRetry={save} onGoMap={onGoMap} onGoOverview={onGoOverview} appear={appear} />
           ) : (
-            <div className="case-card tilt-l" style={phase === "anim" || phase === "finale" ? { visibility: "hidden" } : undefined}>
+            <div className="case-card tilt-l" style={phase === "anim" || phase === "finale" || phase === "outro" ? { visibility: "hidden" } : undefined}>
               <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
               <ClueTag>Zadání</ClueTag>
               {qrOk ? <p className="st-qr">{station.qrMessage || "Kód ověřen."}{!canSave && " Nejdřív se přihlaste, aby se důkaz uložil do spisu vašeho týmu."}</p>
@@ -349,7 +358,9 @@ function PuzzleStation({ station, stationIndex, total, isDone, onComplete, onGoO
           )}
         </div>
       </div>
-      {phase === "finale" && <FinaleView finale={station.evidence.finale} rm={rm} onContinue={() => { setAppear(true); setPhase("solved"); window.scrollTo({ top: 0 }); }} />}
+      {phase === "finale" && <FinaleView finale={station.evidence.finale} rm={rm} onContinue={toOutro} />}
+      {phase === "intro" && <GameIntro scenes={[story.intro]} finishLabel="Začít úkol" onDone={() => { try { localStorage.setItem(introKey, "1"); } catch { /* bez ukládání */ } setPhase("form"); }} />}
+      {phase === "outro" && <GameIntro scenes={[story.outro]} finishLabel="Zobrazit důkaz" onDone={() => { setAppear(true); setPhase("solved"); window.scrollTo({ top: 0 }); }} />}
       {phase === "anim" && (station.reveal === "folder"
         ? <FolderReveal docImage={docSrc(station.evidence)} number={station.evidence.number} withBox={station.revealBox} onDone={afterAnim} />
         : <EvidenceReveal docImage={docSrc(station.evidence)} onDone={afterAnim} />

@@ -347,3 +347,8 @@
 @keyframes gi-bgin{ from{ opacity:0; } to{ opacity:.9; } }
 @media (prefers-reduced-motion:reduce){ .gi-bg{ animation:none; } }
 .gi{ overflow:hidden; }
+
+/* scéna s textem dole – nechá volný střed obrazu (obličeje, předměty) */
+.gi.gi-low{ place-items:end center; padding-bottom:54px; }
+.gi-low .gi-scene{ padding:34px 40px 18px; background:radial-gradient(ellipse 70% 75% at 50% 62%, rgba(10,5,3,.78) 0%, rgba(10,5,3,.55) 60%, rgba(10,5,3,0) 100%); }
+@media (max-height:640px){ .gi.gi-low{ padding-bottom:24px; } }

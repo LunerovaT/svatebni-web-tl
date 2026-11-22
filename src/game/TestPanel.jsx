@@ -6,7 +6,7 @@ export const isTestMode = () => {
   try { return !!import.meta.env?.DEV || localStorage.getItem("testMode") === "1"; } catch { return !!import.meta.env?.DEV; }
 };
 
-export default function TestPanel({ stationIndex, stationTitle, hasTeam, isLoggedIn, onResetStation, onResetAllStations, onSolveAllStations, onResetHomeTask, onResetAccusation, onToggleReveal, revealed }) {
+export default function TestPanel({ stationIndex, stationTitle, hasTeam, isLoggedIn, onResetStation, onResetAllStations, onSolveAllStations, onResetHomeTask, onResetAccusation, onToggleReveal, revealed, onPlayStory }) {
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState("");
   const run = async (label, fn) => {
@@ -18,6 +18,8 @@ export default function TestPanel({ stationIndex, stationTitle, hasTeam, isLogge
       {open && (
         <div className="g-test-panel" role="dialog" aria-label="Testovací režim">
           <p className="g-test-title">Testovací režim</p>
+          {onPlayStory && <button className="g-test-btn" onClick={() => onPlayStory()}>Přehrát celý příběh (úvod, podezřelí, intra a outra)</button>}
+          <button className="g-test-btn" onClick={() => run("intra stanovišť se znovu přehrají", async () => { Object.keys(localStorage).filter((k) => k.startsWith("st_intro_")).forEach((k) => localStorage.removeItem(k)); })}>Znovu zobrazit intra stanovišť</button>
           {stationIndex !== null && (
             <button className="g-test-btn" disabled={!hasTeam} onClick={() => run("stanoviště vráceno", () => onResetStation(stationIndex))}>
               Vrátit toto stanoviště{stationTitle ? ` (${stationTitle})` : ""}

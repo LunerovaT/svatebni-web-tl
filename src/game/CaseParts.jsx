@@ -242,7 +242,7 @@ export function Accusation({ team, evidence, onSeal, teams }) {
       <div className="case-card">
         <p className="g-kicker">{REVEAL.title}</p>
         <h2 className="g-h2" style={{ fontSize: 34 }}>{culprit ? `Pachatel: ${culprit.name}` : "Odhalení…"}</h2>
-        <p>{REVEAL.text}<span className="placeholder">obsah later</span></p>
+        <p>{REVEAL.text}</p>
         {result ? (
           <p className="g-result">Váš tým: <b>{result.points} z {result.max} bodů</b>
             {" "}({result.suspect ? "pachatel správně" : "pachatel špatně"}, {result.motive ? "motiv správně" : "motiv špatně"})</p>
