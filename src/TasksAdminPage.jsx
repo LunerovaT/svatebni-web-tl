@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase.js";
+import { reportError } from "./reportError.js";
 import OrganizerGate from "./admin/OrganizerGate.jsx";
 
 
@@ -46,17 +47,17 @@ function TasksAdminInner() {
         createdAt: serverTimestamp(),
       });
       setTitle(""); setNote(""); setAssignee(""); setCustomCategory("");
-    } finally {
+    } catch (e) { reportError(e, "Přidání úkolu"); } finally {
       setBusy(false);
     }
   };
 
   const updateTask = async (id, patch) => {
-    await updateDoc(doc(db, "tasks", id), patch);
+    try { await updateDoc(doc(db, "tasks", id), patch); } catch (e) { reportError(e, "Uložení úkolu"); }
   };
 
   const removeTask = async (id) => {
-    await deleteDoc(doc(db, "tasks", id));
+    try { await deleteDoc(doc(db, "tasks", id)); } catch (e) { reportError(e, "Smazání úkolu"); }
   };
 
   const byCategory = existingCategories

@@ -5,11 +5,11 @@ export const mod = (n, m = 26) => ((n % m) + m) % m;
 // Háčky a čárky pryč, jen A–Z.
 export const normalize = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 
-export const shiftLetter = (ch, k) => {
+const shiftLetter = (ch, k) => {
   const i = ALPHA.indexOf(ch);
   return i < 0 ? ch : ALPHA[mod(i + k)];
 };
-export const shiftText = (t, k) => [...t].map((c) => shiftLetter(c, k)).join("");
+const shiftText = (t, k) => [...t].map((c) => shiftLetter(c, k)).join("");
 export const encrypt = (plain, key) => shiftText(normalize(plain), key);
 // Co ukáže kotouč při posunu `offset`: vnější (šifrové) písmeno → vnitřní (pravé).
 export const decodeLetter = (cipherLetter, offset) => shiftLetter(cipherLetter, -offset);

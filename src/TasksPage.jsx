@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "./firebase.js";
+import { reportError } from "./reportError.js";
 import OrganizerGate from "./admin/OrganizerGate.jsx";
 
 
@@ -24,11 +25,11 @@ function TasksInner() {
   const current = activeCategory || categories[0];
 
   const toggleDone = async (task) => {
-    await updateDoc(doc(db, "tasks", task.id), { done: !task.done });
+    try { await updateDoc(doc(db, "tasks", task.id), { done: !task.done }); } catch (e) { reportError(e, "Uložení úkolu"); }
   };
 
   const saveAssignee = async (taskId) => {
-    await updateDoc(doc(db, "tasks", taskId), { assignee: assigneeInput.trim() });
+    try { await updateDoc(doc(db, "tasks", taskId), { assignee: assigneeInput.trim() }); } catch (e) { reportError(e, "Uložení úkolu"); return; }
     setEditingAssignee(null);
     setAssigneeInput("");
   };

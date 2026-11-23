@@ -32,4 +32,3 @@ export const SUSPECTS = [
     motive: "Závěť mohla rozhodnout o majetku, na který si dělal nárok.", portrait: thomasImg,
   },
 ];
-export const suspectById = (id) => SUSPECTS.find((s) => s.id === id);

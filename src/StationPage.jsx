@@ -13,7 +13,6 @@ import shard1 from "./assets/ev/shard1.webp";
 import shard2 from "./assets/ev/shard2.webp";
 import shard3 from "./assets/ev/shard3.webp";
 import shard4 from "./assets/ev/shard4.webp";
-import plateImg from "./assets/ev/plate.webp";
 import defaultDoc from "./assets/ev/doc_02.webp";
 import boxClosed from "./assets/ev/box_closed.webp";
 import boxOpen from "./assets/ev/box_open.webp";
@@ -27,7 +26,6 @@ import { SUSPECTS } from "./story/suspects.js";
 // obrázky dokumentů podle klíče evidence.docImage v stations.js (stations.js zůstává bez importů obrázků kvůli testům v Node)
 
 const ANIM_MS = 4300;
-const FOLDER_MS = 4650;
 const FOLDER_BOX_MS = 8100;
 
 function useReducedMotion() {
@@ -203,7 +201,6 @@ function HelpPanel({ station, level, onOpenHint, open, onToggle }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const shown = Math.max(level, local);
-  if (hints.length < 3) return null;
   const reveal = async (lvl) => {
     if (busy) return;
     setBusy(true); setErr("");
@@ -216,6 +213,7 @@ function HelpPanel({ station, level, onOpenHint, open, onToggle }) {
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
   }, [confirm3]);
+  if (hints.length < 3) return null;
   const ask = (lvl) => { if (lvl === 3) setConfirm3(true); else reveal(lvl); };
   return (
     <div className="st-help">
@@ -301,11 +299,16 @@ function PuzzleStation({ station, stationIndex, total, isDone, onComplete, onGoO
     setBusy(true);
     let ok;
     let near = "";
-    if (isWords) {
-      const r = await checkWords(station, words);
-      ok = r.ok;
-      if (!ok && r.matched > 0) near = ` Sedí ${r.matched} z ${r.total} slov.`;
-    } else ok = await checkAnswer(station, value);
+    try {
+      if (isWords) {
+        const r = await checkWords(station, words);
+        ok = r.ok;
+        if (!ok && r.matched > 0) near = ` Sedí ${r.matched} z ${r.total} slov.`;
+      } else ok = await checkAnswer(station, value);
+    } catch (ex) {
+      // např. prohlížeč bez podpory kryptografie: ať tlačítko nezůstane navždy zablokované
+      console.error(ex); setErr("Odpověď se nepodařilo ověřit. Zkuste stránku obnovit nebo ji otevřít v jiném prohlížeči."); setBusy(false); return;
+    }
     if (!ok) { setErr(station.wrongMessage + near); setWrongCount((n) => n + 1); setBusy(false); return; }
     setErr("");
     if (rm) { setPhase("solved"); } else { setPhase("anim"); }

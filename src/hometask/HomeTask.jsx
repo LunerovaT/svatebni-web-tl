@@ -4,8 +4,8 @@ import Wheel from "./Wheel.jsx";
 import GameIntro from "../game/GameIntro.jsx";
 import { SUSPECT_SCENES } from "../story/suspectsIntro.js";
 import { play } from "./sound.js";
-import { decodeLetter, evaluate, verifyCipher } from "./cipher.js";
-import { CIPHER, CIPHER_LETTERS, CIPHER_WORDS, CIPHERTEXT, DOCS, INK, SHIFT_FEEDBACK, SLOT_COUNT, STORY, docAlt } from "./config.js";
+import { decodeLetter, verifyCipher } from "./cipher.js";
+import { CIPHER, CIPHER_WORDS, CIPHERTEXT, DOCS, INK, SHIFT_FEEDBACK, SLOT_COUNT, STORY, docAlt } from "./config.js";
 import imgPhoto from "../assets/ht/photo_eliska.webp";
 import imgPhotoBack from "../assets/ht/photo_back.webp";
 import imgEnvelope from "../assets/ht/envelope.webp";
@@ -291,7 +291,6 @@ function DocDetail({ doc, st, patch, snd, say, setTools }) {
   const moveLamp = (cx, cy) => {
     const r = faceRef.current?.getBoundingClientRect(); if (!r) return;
     let x = (cx - r.left) / r.width, y = (cy - r.top) / r.height;
-    if (side === "back" && !isBook) x = x; // zadní strana je zrcadlově vystřižená, souřadnice platí přímo
     x = Math.max(0, Math.min(1, x)); y = Math.max(0, Math.min(1, y));
     setLamp({ x, y }); visit(x, y);
   };
@@ -523,7 +522,7 @@ export default function HomeTask({ showReset = false, alreadySolved = false, res
     const f = (e) => { if (e.key === "Escape") { if (hintOpen) setHintOpen(false); else if (st.open) patch({ open: null }); } };
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
-  }, [hintOpen, st.open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hintOpen, st.open]);
 
   // po 90 s nečinnosti na stole jemně zvýrazni další krok
   useEffect(() => {

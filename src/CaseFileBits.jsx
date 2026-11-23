@@ -16,7 +16,6 @@ import footprintsImg from "./assets/footprints.webp";
 export function Pushpin() { return null; }
 export function TapeStrip() { return null; }
 export function ConfidentialStamp() { return null; }
-export function FolderPanel({ children }) { return <div>{children}</div>; }
 export function MapIcon() { return null; }
 
 const sentence = (t) => {

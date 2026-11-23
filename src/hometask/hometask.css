@@ -171,9 +171,6 @@
 .ht-notebook{background:url("../assets/ht/letter_paper.webp") center/cover #e6d6b2;color:#2a1f14;padding:18px 18px 16px;box-shadow:0 18px 30px rgba(0,0,0,.65);transform:rotate(.4deg)}
 .ht-nb-empty{margin:0;font:italic 500 21px/1.2 'Cormorant Garamond',serif;text-align:center}
 .ht-nb-ink{margin:0 0 12px;font:italic 500 19px/1.15 'Cormorant Garamond',serif;color:#6e3e16;text-align:center}
-.ht-reader{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 12px;background:#1b110a;color:#f0d487;border:2px solid #a98532;border-radius:6px;padding:5px 14px;width:max-content;max-width:100%;box-shadow:inset 0 2px 8px #000}
-.ht-reader b{font:400 26px 'IBM Plex Sans',sans-serif}
-.ht-reader i{font:400 12px 'IBM Plex Sans',sans-serif;font-style:normal;color:#b5a272}
 .ht-strip{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 14px}
 .ht-word{display:flex;gap:3px}
 .ht-cell{width:clamp(22px,2.1vw,30px);background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:stretch}
@@ -232,8 +229,6 @@
 .ht-casefile::before,.ht-casefile::after{content:'';position:absolute;inset:0;z-index:-1;box-shadow:0 6px 14px rgba(0,0,0,.4)}
 .ht-casefile::before{background:#fdf7e6;transform:rotate(-3deg)}
 .ht-casefile::after{background:#efe0b8;transform:rotate(2.6deg)}
-.ht-ytag{position:absolute;left:-8px;top:-16px;background:#f4d84a;color:#2a210a;font:400 14px 'IBM Plex Sans',sans-serif;padding:8px 26px 8px 14px;transform:rotate(-2deg);clip-path:polygon(0 0,94% 0,100% 50%,94% 100%,0 100%);box-shadow:0 3px 8px rgba(0,0,0,.4)}
-.ht-pin{position:absolute;right:32px;top:-12px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ef6a5a,#a8342a 60%,#5b1410);box-shadow:0 5px 6px rgba(0,0,0,.4)}
 .ht-casefile dl{margin:0}
 .ht-casefile dt{font:400 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.2em;color:#8a7650;margin-top:14px}
 .ht-casefile dd{margin:4px 0 0;padding-bottom:12px;border-bottom:1px dashed #b8a574;font:400 17px/1.35 'IBM Plex Sans',sans-serif}
@@ -286,8 +281,6 @@
 .ht-cell .c{font:600 16px 'IBM Plex Sans',sans-serif}
 .ht-cell .p{font:italic 600 22px 'Cormorant Garamond',serif;color:#2a2f5a}
 .ht-cell.sel .c{background:#e6cb85;box-shadow:0 0 0 2px #8f2a22}
-.ht-reader b{font:600 26px 'Cormorant Garamond',serif}
-.ht-reader i{font:500 12.5px 'IBM Plex Sans',sans-serif}
 .ht-fb{color:#8f2a22}
 .ht-ink .ht-ink-c{font:500 clamp(12px,2.6cqw,26px) 'IBM Plex Sans',sans-serif;letter-spacing:.16em}
 .ht-hintpanel h3{font:400 20px 'Special Elite',monospace}
@@ -312,9 +305,5 @@
 .ht-file .ht-linkbtn{color:rgba(243,233,210,.7)}
 
 @media (max-aspect-ratio: 1/1){ .ht-title h1{display:none} .ht-title{display:flex;justify-content:center} }
-.ht-nb-lab{margin:10px 0 2px;font:600 11px/1 'IBM Plex Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#b98f4a}
-.ht-cipherline,.ht-resultline{margin:2px 0 6px;font:600 clamp(17px,2.4vw,22px)/1.5 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.08em;word-spacing:.5em;color:#f0dfb2;word-break:break-word}
-.ht-resultline.bad{color:#d98a7c}
-.ht-resultline.ok{color:#9fd49a}
 .ht-cell.ok .p{color:#2f6b2f;border-bottom-color:#2f6b2f}
 .ht-round.is-locked{opacity:.5}

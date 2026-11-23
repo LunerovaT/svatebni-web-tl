@@ -23,58 +23,57 @@ Výstup bude ve složce `dist/` — tu pak nahraješ na hosting (Vercel, Netlify
 
 ```
 src/
-  main.jsx          – vstupní bod React aplikace
-  App.jsx           – jednoduchý wrapper
-  WeddingSite.jsx    – celá aplikace (hlavička, routování přes # v URL, jednotlivé stránky)
-  index.css         – základní reset
-  assets/           – grafiky (monogram, ozubená kola, rohová grafika)
+  main.jsx, App.jsx      – vstupní bod, ErrorBoundary
+  WeddingSite.jsx        – kostra: routování, přihlášení a data hráče, rozcestník stránek (cca 190 řádků)
+  site.css               – základní styly webu a her; public/public.css (veřejný web), game/game.css (hra)
+  hooks/
+    usePlayerData.js     – přihlášený účet, profil hráče, odpověď z RSVP, tým a členové týmu (živé poslechy)
+    useTeamActions.js    – zápisy: domácí úkol, stanoviště, nápovědy, obvinění, akce testovacího panelu
+    useStationRoute.js   – #/stanoviste/N?k=KOD → index stanoviště a kód z QR
+  useHashRoute.js        – routování přes # v URL
+  layout/                – GameHeader, PublicHeader (včetně mobilního menu), SiteFooter, GameBackdrop
+  pages/                 – RsvpPage, LoginPage, GameHubPage (spis), SuspectsPage, FinalPage, SleepChecks
+  public/                – veřejné stránky (Domů, Kdy a kde, Program, Informace)
+  game/                  – části spisu (CaseParts), GameIntro (filmová intra), TestPanel, DocViewer
+  hometask/              – domácí minihra
+  stations/              – stanoviště na svatbě (stations.js, answer.js, stations.css)
+  story/                 – texty příběhu (intro, podezřelí, stationStory, final, evidence, fullStory)
+  admin/                 – součásti administrace (RSVP přehled, QR kódy, přihlášení organizátorů)
+  AdminPage, TasksPage, TasksAdminPage – administrace týmů, úkoly (jen organizátoři, načítají se líně)
+  reportError.js         – jednotné hlášení chyb zápisu do Firestore
+  authMessages.js        – české hlášky chyb přihlášení
+  organizers.js          – e-maily organizátorů
+  assets/                – grafiky
 ```
 
-## Stránky (zatím jako sekce v jedné komponentě)
+## Stránky (hash routování)
 
-- Domů (`#/`)
-- Náš příběh (`#/pribeh`)
-- Informace (`#/info`)
-- RSVP (`#/rsvp`)
-- Hra (`#/hra`) — zatím jen uzamčený vstup, čeká na scénář detektivky
+`#/` domů · `#/kde` · `#/program` · `#/info` · `#/rsvp` (potvrzení účasti, zakládá i účet a profil hráče) · `#/profil` (přihlášení / souhrn) ·
+`#/hra` (spis) · `#/uvod` · `#/mapa` · `#/pripad` · `#/stanoviste/N` · `#/vysetrovani` · `#/domaci-ukol` · `#/admin` · `#/ukoly` · `#/spravce-ukolu`.
 
 ## Firebase
 
-Projekt používá Firebase Firestore pro registrace, týmy a živý postup hrou. Konfigurace je v `src/firebase.js` (veřejné identifikátory, ne tajné klíče).
+Firestore (data) + Authentication (e-mail a heslo) pro hosty i organizátory. Konfigurace je v `src/firebase.js` (veřejné identifikátory).
 
-### Přihlášení organizátorů a bezpečnostní pravidla
+### Organizátoři a bezpečnostní pravidla
 
-Administrace, Úkoly a Správce úkolů se přihlašují přes Firebase Authentication (e-mail + heslo), hesla nejsou v kódu.
+Organizátoři jsou rozpoznaní podle e-mailu. **Seznam musí být stejný na dvou místech**: `src/organizers.js` a funkce `isOrganizer()` v `firestore.rules`.
+Po každé změně pravidel je nutné je **publikovat**: Firebase konzole → Firestore Database → Rules → vložit obsah `firestore.rules` → Publish.
+Nepublikovaná pravidla neplatí. Typický příznak: zápis týmů nebo úkolů tiše selže (nově se ukáže hláška „permission-denied“).
 
-1. Firebase konzole → Authentication → Sign-in method → zapnout **E-mail/heslo**.
-2. Authentication → Users → **Add user**: založ účet pro sebe (a případně další pro organizační tým).
-3. Teprve potom: Firestore Database → Rules → vlož obsah souboru `firestore.rules` a **Publish**.
-   Pravidla zamknou RSVP (čte jen organizátor), úkoly a zakládání/rušení týmů. Hra a registrace hráčů dál fungují bez účtu.
-
-Pozor: hráči se přihlašují jen e-mailem bez hesla, proto musí zůstat čtení kolekce `players` veřejné. Kdo zná jeho strukturu, může e-maily hráčů přečíst. Pro ostrý provoz je to přijatelné jen s vědomím tohoto rizika.
-
-**Upozornění:** tohle je záměrně jednoduché — nerozlišuje "hosta" od "admina" na úrovni databáze (ochrana admin stránek je jen heslem v appce, ne v pravidlech). Pro soukromou svatební appku s jmény/e-maily rodiny a přátel je to přiměřené riziko, ale pokud by to vadilo, dá se doplnit Firebase Authentication.
-
-### Hesla (najdeš/měníš přímo v kódu)
-
-- `src/AdminPage.jsx` — `ADMIN_PASSWORD` (přiřazování týmů a rolí ve hře)
-- `src/TasksPage.jsx` — `TASKS_PASSWORD` (přehled úkolů pro organizační tým)
-- `src/TasksAdminPage.jsx` — `TASKS_ADMIN_PASSWORD` (správa úkolů — jen pro vás dva)
+Co pravidla dovolují: RSVP odešle kdokoli, čte jen organizátor (host jen svou odpověď). Hráč čte a upravuje svůj profil, členové týmu vidí jeden druhého a zapisují postup týmu. Týmy zakládá a ruší jen organizátor.
+Známé omezení: člen týmu může zapsat do dokumentu svého týmu cokoli (i `revealed`, `accusation`), a správná řešení jsou v kódu jen jako SHA-256 otisky. Pro soukromou svatbu je to přijatelné riziko.
 
 ### Datový model
 
-- `players` — `{ name, contact, teamId, homeClueSolved, createdAt }`
-- `teams` — `{ name, role, backstory, stationsDone: {"0": bool, ..., "7": bool}, createdAt }`
-- `rsvps` — `{ name, contact, attending, wantsGame, createdAt }`
-- `tasks` — `{ title, note, category, assignee, done, createdAt }`
+- `players` (id = uid) – `{ name, contact, wantsGame, teamId, homeClueSolved, homeTask?, createdAt }`
+- `teams` – `{ name, stationsDone, stationsSolvedAt, stationsSolvedBy, hintsOpened, expertAssist, accusation?, revealed?, createdAt }`
+- `rsvps` – `{ name, contact, attending, wantsGame, sleep, sleepRank, travel, travelFrom, diet, comment, guests, createdAt }`
+- `tasks` – `{ title, note, category, assignee, done, createdAt }`
 
-## Co je potřeba doladit dál
+## Vývoj
 
-- [ ] Vizuální styl — aktuální verze je základ, budeme ji dál ladit
-- [ ] Skutečné texty místo `text later` placeholderů
-- [ ] Scénář a texty hádanek pro stanoviště 3–5
-- [ ] Zvážit heslo/přihlášení pro `/admin`
-- [ ] Případně: přechod z jednoduchého hash routování na `react-router-dom`, pokud hra bude mít víc kroků/podstránek
+`npm install`, `npm run dev` (http://localhost:5173), `npm run build`, `npm test` (testy odpovědí a nápověd stanovišť).
 
 ## Domácí minihra „Poslední cesta Eleanor“
 

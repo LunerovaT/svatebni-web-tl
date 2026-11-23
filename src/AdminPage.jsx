@@ -7,11 +7,10 @@ import OrganizerGate from "./admin/OrganizerGate.jsx";
 import { STATIONS } from "./stations/stations.js";
 import StationQr from "./admin/StationQr.jsx";
 import RsvpOverview from "./admin/RsvpOverview.jsx";
+import { reportError } from "./reportError.js";
 
 
 function AdminInner() {
-  const unlocked = true; // přihlášení řeší OrganizerGate
-
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -40,7 +39,7 @@ function AdminInner() {
     setBusy(true);
     try {
       const stationsDone = {};
-      for (let i = 0; i < 8; i++) stationsDone[i] = false;
+      for (let i = 0; i < STATIONS.length; i++) stationsDone[i] = false;
       const teamRef = await addDoc(collection(db, "teams"), {
         name: newTeamName.trim(),
         stationsDone,
@@ -51,7 +50,7 @@ function AdminInner() {
       );
       setSelectedIds([]);
       setNewTeamName("");
-    } finally {
+    } catch (e) { reportError(e, "Zápis týmu"); } finally {
       setBusy(false);
     }
   };
@@ -65,7 +64,7 @@ function AdminInner() {
       );
       setSelectedIds([]);
       setJoinTeamId("");
-    } finally {
+    } catch (e) { reportError(e, "Zápis týmu"); } finally {
       setBusy(false);
     }
   };
@@ -74,16 +73,16 @@ function AdminInner() {
   const resetStation = async (team, i) => {
     const st = STATIONS[i];
     if (!window.confirm(`Vrátit stanoviště ${i + 1} (${st?.title || st?.name}) týmu ${team.name} jako nevyřešené?`)) return;
-    await updateDoc(doc(db, "teams", team.id), { [`stationsDone.${i}`]: deleteField(), [`stationsSolvedAt.${i}`]: deleteField() });
+    try { await updateDoc(doc(db, "teams", team.id), { [`stationsDone.${i}`]: deleteField(), [`stationsSolvedAt.${i}`]: deleteField(), [`stationsSolvedBy.${i}`]: deleteField() }); } catch (e) { reportError(e); }
   };
   const resetHomeTask = async (player) => {
     if (!window.confirm(`Vrátit domácí úkol hráči ${player.name} jako nevyřešený? Na jeho zařízení se minihra spustí od začátku.`)) return;
-    await updateDoc(doc(db, "players", player.id), { homeClueSolved: false, homeTask: deleteField(), homeTaskResetAt: serverTimestamp() });
+    try { await updateDoc(doc(db, "players", player.id), { homeClueSolved: false, homeTask: deleteField(), homeTaskResetAt: serverTimestamp() }); } catch (e) { reportError(e); }
   };
 
   const setRevealAll = async (revealed) => {
     if (!window.confirm(revealed ? "Odhalit výsledky finálního obvinění všem týmům?" : "Skrýt výsledky všem týmům?")) return;
-    await Promise.all(teams.map((t) => updateDoc(doc(db, "teams", t.id), { revealed })));
+    try { await Promise.all(teams.map((t) => updateDoc(doc(db, "teams", t.id), { revealed }))); } catch (e) { reportError(e); }
   };
   const [testMode, setTestMode] = useState(() => { try { return localStorage.getItem("testMode") === "1"; } catch { return false; } });
   const toggleTestMode = () => {
@@ -93,9 +92,12 @@ function AdminInner() {
   };
 
   const dissolveTeam = async (teamId) => {
+    if (!window.confirm("Rozpustit tým? Hráči zůstanou, ale tým i jeho postup se smažou.")) return;
     const members = players.filter((p) => p.teamId === teamId);
-    await Promise.all(members.map((p) => updateDoc(doc(db, "players", p.id), { teamId: null })));
-    await deleteDoc(doc(db, "teams", teamId));
+    try {
+      await Promise.all(members.map((p) => updateDoc(doc(db, "players", p.id), { teamId: null })));
+      await deleteDoc(doc(db, "teams", teamId));
+    } catch (e) { reportError(e, "Zápis týmu"); }
   };
 
   return (

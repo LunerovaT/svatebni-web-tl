@@ -18,7 +18,7 @@ export function DocThumb({ src, alt, wide, label = "Zvětšit a přečíst", cla
 
 const LEVELS = [1, 1.7, 2.5];
 
-export function DocLightbox({ src, alt, onClose }) {
+function DocLightbox({ src, alt, onClose }) {
   const [z, setZ] = useState(0);
   const closeRef = useRef(null);
   useEffect(() => {

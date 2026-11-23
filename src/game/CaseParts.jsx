@@ -8,7 +8,7 @@ import { STATIONS } from "../stations/stations.js";
 import envClosed from "../assets/ev/env_closed.webp";
 
 // ---------- čas po česku ----------
-export function timeAgo(ms) {
+function timeAgo(ms) {
   if (!ms) return "";
   const s = Math.max(0, (Date.now() - ms) / 1000);
   if (s < 60) return "právě teď";
@@ -32,7 +32,7 @@ export function weddingCountdown(now = new Date()) {
 }
 
 // ---------- detail důkazu (modální okno) ----------
-export function EvidenceModal({ item, onClose }) {
+function EvidenceModal({ item, onClose }) {
   useEffect(() => {
     const f = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", f);
