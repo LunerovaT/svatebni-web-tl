@@ -1,9 +1,9 @@
 // Horní lišta herních obrazovek (Spis / Mapa / Příběh + návrat na svatební web).
-export default function GameHeader({ go, page, stationIndex, myPlayerId, hasTeam }) {
+export default function GameHeader({ go, page, stationIndex, myPlayerId, hasTeam, gameOpen }) {
   return (
-    <header className={`g-top${myPlayerId ? "" : " no-nav"}`}>
+    <header className={`g-top${myPlayerId && gameOpen ? "" : " no-nav"}`}>
       <button className="g-brand" onClick={() => go("hra")}>Případ poslední vůle</button>
-      {myPlayerId && (
+      {myPlayerId && gameOpen && (
         <nav className="g-nav" aria-label="Hra">
           {[
             { id: "hra", label: "Spis", show: true, icon: <path d="M4 5h6l2 2h8v12H4z" /> },

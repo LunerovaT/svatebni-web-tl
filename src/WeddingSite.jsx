@@ -1,4 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from "react";
+import { weddingGameOpen } from "./gameConfig.js";
+import LoadingNotice from "./pages/LoadingNotice.jsx";
 import { signOut } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "./firebase.js";
@@ -50,10 +52,17 @@ export default function WeddingSite() {
   const [rsvpSent, setRsvpSent] = useState(() => { try { return localStorage.getItem("rsvp_sent") === "1"; } catch { return false; } });
   const rsvpConfirmed = rsvpSent || !!myRsvp;
 
-  // úvod hry se hráči ukáže jednou (pamatuje se v prohlížeči)
+  // úvod hry se hráči ukáže jednou (pamatuje se v prohlížeči; stav držíme v Reactu, aby po dokončení úvod hned zmizel)
   const introKey = myPlayerId ? `intro_seen_${myPlayerId}` : null;
-  const introSeen = (() => { if (!introKey) return true; try { return localStorage.getItem(introKey) === "1"; } catch { return true; } })();
-  const finishIntro = () => { try { if (introKey) localStorage.setItem(introKey, "1"); } catch { /* bez ukládání */ } go("hra"); };
+  const [introDoneFor, setIntroDoneFor] = useState(null);
+  const introSeen = (() => { if (!introKey) return true; if (introDoneFor === introKey) return true; try { return localStorage.getItem(introKey) === "1"; } catch { return true; } })();
+  const gameOpen = weddingGameOpen(myPlayer?.contact);
+  const finishIntro = () => {
+    try { if (introKey) localStorage.setItem(introKey, "1"); } catch { /* bez ukládání */ }
+    setIntroDoneFor(introKey);
+    // před svatbou je jediný úkol domácí: rovnou na něj
+    go(!gameOpen && !myPlayer?.homeClueSolved ? "domaci-ukol" : "hra");
+  };
 
   const joinGame = async () => {
     if (!authUid) return;
@@ -83,10 +92,13 @@ export default function WeddingSite() {
   useEffect(() => {
     if (isGameScreen && page !== "pribeh" && !authLoading && !myPlayerId) { setNeedRsvp(true); go("rsvp"); }
   }, [page, authLoading, myPlayerId]); // eslint-disable-line react-hooks/exhaustive-deps
-  // mapa a příběh dávají smysl až s týmem; bez něj jdeme na přehled
+  // části hry, které se otevřou až na svatbě (nebo v testovacím režimu), hosta vrátí na přehled
+  const weddingOnly = page === "mapa" || page === "pripad" || page === "vysetrovani" || stationIndex !== null;
   useEffect(() => {
-    if ((page === "mapa" || page === "pripad") && myPlayerId && myPlayer?.wantsGame !== "ne" && !myPlayer?.teamId) go("hra");
-  }, [page, myPlayerId, myPlayer?.teamId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (weddingOnly && myPlayerId && !gameOpen) go("hra");
+    // mapa a příběh dávají smysl až s týmem; bez něj jdeme na přehled
+    else if ((page === "mapa" || page === "pripad") && myPlayerId && myPlayer?.wantsGame !== "ne" && !myPlayer?.teamId) go("hra");
+  }, [page, myPlayerId, myPlayer?.teamId, gameOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const testPanel = isTestMode() && (
     <TestPanel onPlayStory={() => go("pribeh")} stationIndex={stationIndex} stationTitle={stationIndex !== null ? (STATIONS[stationIndex]?.title || STATIONS[stationIndex]?.name) : null}
@@ -120,7 +132,7 @@ export default function WeddingSite() {
       <div style={{ position: "relative", zIndex: 1 }}>
       {isGameScreen && <GameBackdrop />}
       {isGameScreen
-        ? <GameHeader go={go} page={page} stationIndex={stationIndex} myPlayerId={myPlayerId} hasTeam={!!myTeam} />
+        ? <GameHeader go={go} page={page} stationIndex={stationIndex} myPlayerId={myPlayerId} hasTeam={!!myTeam} gameOpen={gameOpen} />
         : <PublicHeader go={go} page={page} rsvpConfirmed={rsvpConfirmed} />}
       {isGameScreen && testPanel}
 
@@ -133,20 +145,20 @@ export default function WeddingSite() {
         {page === "rsvp" && <RsvpPage key={rsvpEpoch} go={go} authUid={authUid} needRsvp={needRsvp} setNeedRsvp={setNeedRsvp} rsvpConfirmed={rsvpConfirmed} rsvpAgain={rsvpAgain} setRsvpAgain={setRsvpAgain} myRsvp={myRsvp} onSent={() => setRsvpSent(true)} />}
 
         {(page === "hra" || page === "profil") && !myPlayerId && authLoading && (
-          <section className="block" style={{ paddingTop: 60 }}><div className="wrap"><p className="lede" style={{ textAlign: "center" }}>Chvilku…</p></div></section>
+          <LoadingNotice />
         )}
         {page === "profil" && !myPlayerId && !authLoading && <LoginPage key={rsvpEpoch} go={go} />}
 
         {page === "hra" && playing && !introSeen && <GameIntro onDone={finishIntro} finishLabel="Do hry" />}
         {page === "hra" && myPlayerId && (introSeen || myPlayer?.wantsGame === "ne") && (
           <GameHubPage player={myPlayer} team={myTeam} members={teamMembers} evidence={evidence} stationsDoneMap={stationsDoneMap}
-                       stationsDoneCount={stationsDoneCount} finalUnlocked={finalUnlocked} go={go} onJoin={joinGame} />
+                       stationsDoneCount={stationsDoneCount} finalUnlocked={finalUnlocked} go={go} onJoin={joinGame} gameOpen={gameOpen} />
         )}
 
         {page === "uvod" && myPlayerId && <GameIntro onDone={() => go("hra")} />}
         {page === "pribeh" && isTestMode() && <GameIntro scenes={FULL_STORY_SCENES} finishLabel="Hotovo" onDone={() => go(myPlayerId ? "hra" : "home")} />}
-        {page === "pripad" && myPlayerId && myTeam && <SuspectsPage evidence={evidence} />}
-        {page === "mapa" && myTeam && (
+        {page === "pripad" && gameOpen && myPlayerId && myTeam && <SuspectsPage evidence={evidence} />}
+        {page === "mapa" && gameOpen && myTeam && (
           <MapPage stations={STATIONS} stationsDoneMap={stationsDoneMap} onGoOverview={() => go("hra")} onGoStation={(i) => go(`stanoviste/${i + 1}`)} />
         )}
 
@@ -155,7 +167,7 @@ export default function WeddingSite() {
                        onJoinGame={joinGame} onOpenHomeTask={() => go("domaci-ukol")} onLogout={logout} />
         )}
 
-        {stationIndex !== null && (
+        {stationIndex !== null && gameOpen && (
           <StationPage
             stationIndex={stationIndex}
             stations={STATIONS}
@@ -170,7 +182,7 @@ export default function WeddingSite() {
           />
         )}
 
-        {page === "vysetrovani" && myPlayerId && (
+        {page === "vysetrovani" && gameOpen && myPlayerId && (
           <FinalPage team={myTeam} evidence={evidence} finalUnlocked={finalUnlocked} stationsDoneMap={stationsDoneMap} onSeal={sealAccusation} go={go} />
         )}
 

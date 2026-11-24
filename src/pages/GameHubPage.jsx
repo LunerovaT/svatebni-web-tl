@@ -111,9 +111,33 @@ function TeamHub({ player, team, members, evidence, stationsDoneMap, stationsDon
   );
 }
 
+// Před svatbou: jen domácí úkol. Stanoviště, mapa a finále se odemknou až na svatbě (gameConfig.js).
+function PreWedding({ player, go }) {
+  return (
+    <section className="block" style={{ paddingTop: 40 }}>
+      <div className="wrap">
+        <p className="eyebrow">Spis vyšetřovatele</p>
+        <h1 className="display">{player?.name || "Vítejte"}</h1>
+        <div className="case-card">
+          <HomeTaskCard solved={!!player?.homeClueSolved} onOpen={() => go("domaci-ukol")} />
+          <p className="gh-note">
+            {player?.homeClueSolved
+              ? "První stopu máte. Další stanoviště a závěrečné vyšetřování odemkneme až na svatbě."
+              : "Domácí úkol zvládnete kdykoli před svatbou. Další stanoviště a závěrečné vyšetřování odemkneme až na místě."}
+          </p>
+          <div className="g-actions">
+            <TagButton variant="ghost" onClick={() => go("home")}>Zpět na svatební web</TagButton>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // Úvodní stránka hry (#/hra): vybere správný pohled podle stavu hráče.
-export default function GameHubPage({ player, team, members, evidence, stationsDoneMap, stationsDoneCount, finalUnlocked, go, onJoin }) {
+export default function GameHubPage({ player, team, members, evidence, stationsDoneMap, stationsDoneCount, finalUnlocked, go, onJoin, gameOpen }) {
   if (player?.wantsGame === "ne") return <NotPlaying player={player} onJoin={onJoin} />;
+  if (!gameOpen) return <PreWedding player={player} go={go} />;
   if (!player?.teamId) return <NoTeam player={player} go={go} />;
   return <TeamHub player={player} team={team} members={members} evidence={evidence} stationsDoneMap={stationsDoneMap} stationsDoneCount={stationsDoneCount} finalUnlocked={finalUnlocked} go={go} />;
 }

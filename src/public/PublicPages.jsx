@@ -82,7 +82,7 @@ export function HomePage({ go, choosePath, chosenPath, rsvpDone }) {
               <span className="pb-bigcta-txt">
                 <span className="pb-bigcta-k">Svatební detektivka</span>
                 <span className="pb-bigcta-t">Zahrát si Případ poslední vůle</span>
-                <span className="pb-bigcta-s">Hádanky, stopy a záhada, kterou vyřešíte na svatbě. Hra je dobrovolná.</span>
+                <span className="pb-bigcta-s">Začněte domácím úkolem, zbytek záhady vyřešíte na svatbě. Hra je dobrovolná.</span>
               </span>
               <span className="pb-bigcta-arrow" aria-hidden="true">→</span>
             </a>

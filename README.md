@@ -75,6 +75,11 @@ Známé omezení: člen týmu může zapsat do dokumentu svého týmu cokoli (i 
 
 `npm install`, `npm run dev` (http://localhost:5173), `npm run build`, `npm test` (testy odpovědí a nápověd stanovišť).
 
+## Zveřejnění: co je otevřené pro hosty
+
+Soubor `src/gameConfig.js`, konstanta `WEDDING_GAME_OPEN`. Dokud je `false`, host vidí jen web, potvrzení účasti, profil a domácí úkol; stanoviště, mapa, příběh a finální vyšetřování jsou skrytá (adresy přesměrují na přehled).
+Na svatbě stačí přepnout na `true` a nasadit. Všechno je vždy otevřené v testovacím režimu (administrace) a přihlášeným organizátorům (e-maily v `src/organizers.js`).
+
 ## Domácí minihra „Poslední cesta Eleanor“
 
 - Adresa: `#/domaci-ukol` (odkaz je na profilu hráče). Celoobrazovková scéna na mahagonovém stole, responzivní (PC na šířku / mobil na výšku).

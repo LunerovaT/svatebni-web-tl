@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // Veřejné identifikátory projektu — v pořádku mít je v kódu (nejsou to hesla).
@@ -15,5 +15,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// Automatická volba přenosu: na sítích a prohlížečích, kde selhává streamování (chyby QUIC / „transport errored“),
+// přepne Firestore na long polling, takže se stránka nezasekne na „Chvilku…“.
+export const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 export const auth = getAuth(app); // přihlášení organizátorů (admin, úkoly)
