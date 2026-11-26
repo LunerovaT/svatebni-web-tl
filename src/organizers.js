@@ -1,7 +1,7 @@
 // E-maily organizátorů (administrace, úkoly, přehled odpovědí).
 // POZOR: stejný seznam musí být i ve firestore.rules (funkce isOrganizer). Tohle je jen pro to,
 // aby se cizímu přihlášenému účtu místo rozbité stránky ukázala srozumitelná hláška.
-export const ORGANIZER_EMAILS = [
+const ORGANIZER_EMAILS = [
   "tereza.luner@gmail.com",
   "lunerova.tereza@seznam.cz",
   "lukassnopek113@gmail.com",

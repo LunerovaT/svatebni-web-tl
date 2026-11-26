@@ -14,7 +14,8 @@ import imgLamp from "../assets/ht/lamp.webp";
 import imgPostcard from "../assets/ht/postcard.webp";
 import imgTag from "../assets/ht/tag.webp";
 
-const STORE_KEY = "wedding_hometask_v2";
+// Postup se ukládá v prohlížeči zvlášť pro každého hráče (jinak by ho zdědil další, kdo se na tomhle zařízení přihlásí).
+export const homeTaskKey = (playerId) => "wedding_hometask_v2" + (playerId ? "_" + playerId : "");
 const PHOTO_RATIO = 1086 / 1448;
 const ZOOMS = [1, 2, 3.2];
 
@@ -39,10 +40,10 @@ const DEFAULT = () => ({
   sound: false,
 });
 
-function load(alreadySolved) {
+function load(alreadySolved, storeKey) {
   const base = DEFAULT();
   try {
-    const raw = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    const raw = JSON.parse(localStorage.getItem(storeKey) || "null");
     if (raw && raw.v === 2) {
       const s = { ...base, ...raw.s, open: null };
       if (!Array.isArray(s.slots) || s.slots.length !== SLOT_COUNT) s.slots = base.slots;
@@ -486,8 +487,10 @@ function FileView({ st, onContinue, onDesk, onReset, onSuspects, showReset }) {
 }
 
 // =====================================================================
-export default function HomeTask({ showReset = false, alreadySolved = false, resetToken = null, onSolved, onExit, onContinue }) {
-  const [st, setSt] = useState(() => load(alreadySolved));
+export default function HomeTask({ playerId = null, skipIntro = false, showReset = false, alreadySolved = false, resetToken = null, onSolved, onExit, onContinue }) {
+  const STORE_KEY = homeTaskKey(playerId);
+  // úvodní text minihry jen pro toho, kdo neviděl úvod hry (obsahově se opakují)
+  const [st, setSt] = useState(() => { const s = load(alreadySolved, STORE_KEY); return skipIntro ? { ...s, intro: false } : s; });
   const patch = (p) => setSt((s) => ({ ...s, ...(typeof p === "function" ? p(s) : p) }));
   const rm = useReducedMotion();
   const snd = (k) => play(k, st.sound);
@@ -497,7 +500,7 @@ export default function HomeTask({ showReset = false, alreadySolved = false, res
   const [tools, setTools] = useState(null);
   const solvedSent = useRef(alreadySolved);
 
-  useEffect(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify({ v: 2, s: st })); } catch { /* ignore */ } }, [st]);
+  useEffect(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify({ v: 2, s: st })); } catch { /* ignore */ } }, [st, STORE_KEY]);
   // administrace vrátila úkol jako nevyřešený → začít znovu (každý reset jen jednou)
   useEffect(() => {
     if (resetToken && st.resetSeen !== resetToken) {
@@ -512,6 +515,15 @@ export default function HomeTask({ showReset = false, alreadySolved = false, res
   useEffect(() => {
     if (alreadySolved && !st.solved) { solvedSent.current = true; patch({ solved: true, sealBroken: true, photoChecked: true, inkFound: true, stage: "file", intro: false }); }
   }, [alreadySolved]); // eslint-disable-line react-hooks/exhaustive-deps
+  // pojistka: úkol je v tomhle prohlížeči vyřešený, ale v databázi ne (zápis se nepovedl, např. bez signálu) → zkusit uložit znovu
+  const resyncTried = useRef(false);
+  useEffect(() => {
+    const pendingReset = resetToken && st.resetSeen !== resetToken;   // administrace právě úkol vrátila – neukládat zpět
+    if (st.solved && !alreadySolved && !pendingReset && playerId && !resyncTried.current) {
+      resyncTried.current = true;
+      onSolved?.({ hintsUsed: st.hintsUsed, wrongDocs: st.wrongChecked.length, attempts: st.attempts + 1 });
+    }
+  }, [alreadySolved, resetToken]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (import.meta.env?.DEV) {
       const p = verifyCipher(CIPHER, SHIFT_FEEDBACK, DOCS);
@@ -561,7 +573,7 @@ export default function HomeTask({ showReset = false, alreadySolved = false, res
       {st.stage === "desk" && (
         <>
           <header className="ht-top">
-            <button className="ht-exit" onClick={onExit} aria-label="Opustit domácí úkol a vrátit se do hry">Do hry</button>
+            <button className="ht-exit" onClick={onExit} aria-label="Opustit domácí úkol (postup zůstane uložený)">Zpět</button>
             <div className="ht-title">
               <span className="ht-kicker">{STORY.caseName}</span>
               <h1>{STORY.title}</h1>

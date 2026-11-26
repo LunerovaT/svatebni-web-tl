@@ -65,8 +65,8 @@ export const STORY = {
   title: "Poslední cesta Eleanor",
   caseName: "Případ poslední vůle",
   intro: [
-    "Whitmore Manor, 02:40.",
-    "Eleanor Whitmoreová je mrtvá. Majetek za 48 milionů dolarů čeká na závěť, která zmizela.",
+    "Whitmore Manor, 23:30.",
+    "Eleanor Whitmoreová je mrtvá. Po ní zůstal majetek za 48 milionů dolarů a mnoho otázek.",
     "Na jejím stole zůstalo pár věcí ze staré cesty.",
     "Vy jste vyšetřovatel. Začněte dopisem.",
   ],
@@ -75,7 +75,7 @@ export const STORY = {
     dateline: "Pracovna, hodinu před půlnocí",
     paragraphs: [
       "Milý neznámý příteli,",
-      "jestli čtete tyto řádky, nedožila jsem se rána. Moje poslední vůle zmizela dřív než já.",
+      "jestli čtete tyto řádky, nedožila jsem se rána.",
       "Jméno napsat nemohu. Tento dům má uši.",
       "Pravdu jsem ukryla tam, kde začal můj druhý život: za dveřmi, za kterými jsem poprvé usnula na moři.",
       "Kdo pozná, kým jsem byla, než jsem se stala Eleanor, ty dveře najde.",

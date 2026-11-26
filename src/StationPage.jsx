@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Pushpin, ClueTag, TapeStrip, Polaroid, NoteBg, TagButton } from "./CaseFileBits.jsx";
+import { ClueTag, TagButton } from "./CaseFileBits.jsx";
 import { checkAnswer, checkWords } from "./stations/answer.js";
 import { HINT_TITLES } from "./stations/stations.js";
 import { DocThumb } from "./game/DocViewer.jsx";
@@ -326,7 +326,6 @@ function PuzzleStation({ station, stationIndex, total, isDone, onComplete, onGoO
             <EvidenceCard station={station} saveState={saveState} onRetry={save} onGoMap={onGoMap} onGoOverview={onGoOverview} appear={appear} />
           ) : (
             <div className="case-card tilt-l" style={phase === "anim" || phase === "finale" || phase === "outro" ? { visibility: "hidden" } : undefined}>
-              <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
               <ClueTag>Zadání</ClueTag>
               {qrOk ? <p className="st-qr">{station.qrMessage || "Kód ověřen."}{!canSave && " Nejdřív se přihlaste, aby se důkaz uložil do spisu vašeho týmu."}</p>
                     : <p className="st-prompt">{station.prompt}</p>}
@@ -372,8 +371,8 @@ function PuzzleStation({ station, stationIndex, total, isDone, onComplete, onGoO
   );
 }
 
-// Stanoviště, jejichž obsah ještě není hotový – zástupná stránka (libovolný text potvrdí demo).
-function PlaceholderStation({ station, stationIndex, total, isDone, onComplete, onGoOverview, onGoMap }) {
+// Stanoviště, jehož obsah ještě není hotový: jen informace, nic nejde potvrdit (dřív šlo libovolným textem).
+function PlaceholderStation({ station, stationIndex, total, onGoOverview, onGoMap }) {
   return (
     <section className="block" style={{ paddingTop: 56 }}>
       <div className="wrap">
@@ -381,36 +380,9 @@ function PlaceholderStation({ station, stationIndex, total, isDone, onComplete, 
         <h1 className="display">{station.name}</h1>
         <div className="case-bg">
           <div className="case-card tilt-l">
-            <Pushpin style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)" }} />
-            <ClueTag>Stopa č. {stationIndex + 1}</ClueTag>
-            <div style={{ margin: "18px 0 20px", display: "flex", justifyContent: "center" }}>
-              <Polaroid rotate={-2}>
-                <span style={{ color: "#8a7a68", fontSize: 12.5, padding: "0 14px", textAlign: "center" }}>
-                  sem přijde fotka / důkaz<span className="placeholder">obsah later</span>
-                </span>
-              </Polaroid>
-            </div>
-            <div style={{ position: "relative", marginBottom: 20 }}>
-              <TapeStrip rotate={2} />
-              <NoteBg style={{ fontSize: 14.5, color: "#2c2416" }}>
-                Sem přijde text hádanky/indicie pro toto stanoviště.
-                <span className="placeholder">obsah later</span>
-              </NoteBg>
-            </div>
-            {!isDone ? (
-              <form onSubmit={(e) => { e.preventDefault(); onComplete(stationIndex); }} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <div className="field" style={{ flex: 1, minWidth: 200 }}>
-                  <label>Zadejte odpověď / heslo</label>
-                  <input type="text" placeholder="zatím libovolný text potvrdí demo" />
-                </div>
-                <TagButton type="submit" color="#3a5a3a" textColor="#fff" rotate={1} style={{ alignSelf: "flex-end" }}>Ověřit</TagButton>
-              </form>
-            ) : (
-              <div style={{ border: "1px solid rgba(58,90,58,0.4)", padding: "18px 20px" }}>
-                <p style={{ margin: 0, fontSize: 15 }}><b>Stanoviště vyřešeno ✓</b></p>
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 16, marginTop: 22, flexWrap: "wrap" }}>
+            <ClueTag>Připravujeme</ClueTag>
+            <p style={{ margin: "14px 0 20px" }}>Tohle stanoviště zatím není připravené.</p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               <TagButton color="#d8c9a3" rotate={-1} onClick={onGoMap}>Zpět na mapu</TagButton>
               <TagButton color="#d8c9a3" rotate={1} onClick={onGoOverview}>Spis týmu</TagButton>
             </div>

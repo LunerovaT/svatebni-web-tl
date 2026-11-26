@@ -78,7 +78,8 @@ Známé omezení: člen týmu může zapsat do dokumentu svého týmu cokoli (i 
 ## Zveřejnění: co je otevřené pro hosty
 
 Soubor `src/gameConfig.js`, konstanta `WEDDING_GAME_OPEN`. Dokud je `false`, host vidí jen web, potvrzení účasti, profil a domácí úkol; stanoviště, mapa, příběh a finální vyšetřování jsou skrytá (adresy přesměrují na přehled).
-Na svatbě stačí přepnout na `true` a nasadit. Všechno je vždy otevřené v testovacím režimu (administrace) a přihlášeným organizátorům (e-maily v `src/organizers.js`).
+Na svatbě stačí přepnout na `true` a nasadit.
+Kód a texty stanovišť, příběhu a rozuzlení jsou v samostatném souboru (`src/game/WeddingGame.jsx` a vše, co importuje), který se stáhne až při otevření hry. Hosté před svatbou ho tedy vůbec nenačítají. Nepřidávej proto importy ze `stations/stations.js`, `story/final.js`, `story/stationStory.js` ani `game/CaseParts.jsx` do hlavní části webu (WeddingSite, pages, layout, public). Všechno je vždy otevřené v testovacím režimu (administrace) a přihlášeným organizátorům (e-maily v `src/organizers.js`).
 
 ## Domácí minihra „Poslední cesta Eleanor“
 

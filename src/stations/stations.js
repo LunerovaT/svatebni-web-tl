@@ -1,3 +1,4 @@
+import { STATION_COUNT } from "./meta.js";
 // Konfigurace stanovišť na svatbě. Pořadí = číslo stanoviště (1–5), pos = pozice značky na mapě v % (MapPage).
 // Stanoviště jsou nezávislá – dají se řešit v libovolném pořadí.
 // Po vyřešení všech pěti se odemkne finální vyšetřování (#/vysetrovani).
@@ -188,5 +189,5 @@ export const STATIONS = [
 
 export const HINT_TITLES = ["Malé pošťouchnutí", "Pomoc vyšetřovatele", "Odborná asistence"];
 
-export const FINAL_REQUIRES = STATIONS.length; // všech 5 indicií
-export const doneCountOf = (doneMap = {}) => STATIONS.filter((_, i) => doneMap[i]).length;
+export { FINAL_REQUIRES, doneCountOf } from "./meta.js";
+if (STATIONS.length !== STATION_COUNT) console.error(`[stations] STATION_COUNT v meta.js (${STATION_COUNT}) nesedí s počtem stanovišť (${STATIONS.length}).`);

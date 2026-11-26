@@ -257,7 +257,7 @@ nav.links a.pb-nav-game:hover, nav.links a.pb-nav-game.active{ background:var(--
 .pb-root .pb-h1s{ font-size:var(--t-h1); line-height:1.04; letter-spacing:.01em; margin:0 0 14px; }
 .pb-root .pb-h2, .pb-root .pb-paths-head h2{ font-size:var(--t-h2); line-height:1.1; letter-spacing:.01em; margin:0 0 12px; }
 /* H3 (podnadpis): karty, údaje, tlačítko do hry, časy v programu, kurzíva */
-.pb-root .pb-card h3, .pb-root .pb-qa h3, .pb-root .pb-fact-v, .pb-root .p-title, .pb-root .pb-bigcta-t, .pb-root .pb-t-time{
+.pb-root .pb-card h3, .pb-root .pb-qa h3, .pb-root .pb-fact-v, .pb-root .pb-bigcta-t, .pb-root .pb-t-time{
   font:500 var(--t-h3)/1.2 var(--f-head); }
 .pb-root .pb-card h3, .pb-root .pb-qa h3{ margin:0 0 6px; }
 .pb-root .pb-count, .pb-root .pb-dress-lead, .pb-root .pb-dress-lady-txt{ font:italic 500 var(--t-h3)/1.35 var(--f-head) !important; }
@@ -272,7 +272,7 @@ nav.links a.pb-nav-game:hover, nav.links a.pb-nav-game.active{ background:var(--
 .pb-root .pb-dress-lead{ line-height:1.35; }
 /* Malý text (14 px) */
 .pb-root .pb-btn, .pb-root nav.links a, .pb-root .pb-card p, .pb-root .pb-qa-a p, .pb-root .pb-prices li,
-.pb-root .pb-t p, .pb-root .pb-fact-s, .pb-root .p-text, .pb-root .p-go, .pb-root .pb-gamebar, .pb-root .pb-foot p,
+.pb-root .pb-t p, .pb-root .pb-fact-s, .pb-root .pb-gamebar, .pb-root .pb-foot p,
 .pb-root .pb-ps, .pb-root .pb-small, .pb-root .pb-bigcta-s, .pb-root .pb-rank li, .pb-root .pb-dress-text .pb-ps,
 .pb-root .pb-trio .pb-card p, .pb-root .pb-trio .pb-prices li, .pb-root .pb-qa-a p{ font-size:var(--t-small) !important; }
 .pb-root .pb-btn{ font-family:var(--f-body); font-weight:500; }

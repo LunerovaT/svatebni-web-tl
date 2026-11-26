@@ -10,13 +10,6 @@ import marker6 from "./assets/marker_6.webp";
 import marker7 from "./assets/marker_7.webp";
 import marker8 from "./assets/marker_8.webp";
 import bodyOutlineImg from "./assets/body_outline.webp";
-import footprintsImg from "./assets/footprints.webp";
-
-// Původní dekorace korkové nástěnky – na stole nedávají smysl, zůstávají jen kvůli kompatibilitě volání.
-export function Pushpin() { return null; }
-export function TapeStrip() { return null; }
-export function ConfidentialStamp() { return null; }
-export function MapIcon() { return null; }
 
 const sentence = (t) => {
   if (typeof t !== "string") return t;
@@ -27,16 +20,6 @@ const sentence = (t) => {
 // Malý nadpis sekce na papíře (dříve žlutý štítek).
 export function ClueTag({ children, style }) {
   return <p className="g-kicker" style={style}>{sentence(children)}</p>;
-}
-
-// Fotografie / místo pro fotku.
-export function Polaroid({ children, style }) {
-  return <div className="g-photo" style={style}>{children}</div>;
-}
-
-// Zvýrazněný blok textu (zadání, poznámka).
-export function NoteBg({ children, style }) {
-  return <div className="g-note" style={style}>{children}</div>;
 }
 
 // Číslované důkazní značky (1–8) na mapě.
@@ -52,11 +35,6 @@ export function EvidenceMarker({ number, style }) {
 export function BodyOutline({ style }) {
   return <img src={bodyOutlineImg} alt="místo činu" style={{ width: 90, ...style }} />;
 }
-export function Footprints({ style }) {
-  return <img src={footprintsImg} alt="" style={{ width: 140, ...style }} />;
-}
-
-// Postup vyšetřování: N z celkového počtu, hotová stanoviště v libovolném pořadí (doneMap) nebo prvních N (doneCount).
 export function ProgressStrip({ total, doneCount = 0, doneMap, style }) {
   const isDone = (i) => (doneMap ? !!doneMap[i] : i < doneCount);
   const count = Array.from({ length: total }).filter((_, i) => isDone(i)).length;

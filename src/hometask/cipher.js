@@ -14,17 +14,6 @@ export const encrypt = (plain, key) => shiftText(normalize(plain), key);
 // Co ukáže kotouč při posunu `offset`: vnější (šifrové) písmeno → vnitřní (pravé).
 export const decodeLetter = (cipherLetter, offset) => shiftLetter(cipherLetter, -offset);
 
-// Vyhodnocení přepisu. slots: pole {ch, off} | null
-export function evaluate(slots, cipher, shiftFeedback, msg) {
-  if (slots.some((s) => !s)) return { ok: false, kind: "incomplete" };
-  const text = slots.map((s) => s.ch).join("");
-  if (text === normalize(cipher.plain).replace(/ /g, "")) return { ok: true };
-  const offs = new Set(slots.map((s) => s.off));
-  if (offs.size > 1) return { ok: false, kind: "mixed", msg: msg.mixed };
-  const only = [...offs][0];
-  return { ok: false, kind: "wrong", msg: shiftFeedback[only] || msg.generic };
-}
-
 // Kontrola konzistence konfigurace – běží při vývoji a hlásí rozpor.
 export function verifyCipher(cipher, shiftFeedback, docs) {
   const problems = [];

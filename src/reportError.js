@@ -7,8 +7,3 @@ export function reportError(e, what = "Zápis") {
     : `${what} se nepodařil: ${e?.message || e}`;
   try { window.alert(msg); } catch { /* bez dialogu */ }
 }
-
-// Obalí asynchronní akci: chybu ohlásí místo tichého selhání.
-export const safely = (fn, what) => async (...args) => {
-  try { return await fn(...args); } catch (e) { reportError(e, what); return undefined; }
-};

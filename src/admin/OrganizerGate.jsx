@@ -2,20 +2,10 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "firebase/auth";
 import { auth } from "../firebase.js";
 import { isOrganizerEmail } from "../organizers.js";
+import { authMsg } from "../authMessages.js";
 
 // Přihlášení organizátorů přes Firebase Authentication (e-mail + heslo). Hesla nejsou v kódu.
 // Účty se zakládají v konzoli Firebase (Authentication → Users), viz README.
-const ERR = {
-  "auth/invalid-credential": "Špatný e-mail nebo heslo.",
-  "auth/invalid-email": "Zkontrolujte tvar e-mailu.",
-  "auth/user-not-found": "Špatný e-mail nebo heslo.",
-  "auth/wrong-password": "Špatný e-mail nebo heslo.",
-  "auth/too-many-requests": "Příliš mnoho pokusů. Zkuste to za chvíli.",
-  "auth/network-request-failed": "Chybí připojení k internetu.",
-  "auth/unauthorized-domain": "Tahle adresa webu není ve Firebase povolená (Authentication → Settings → Authorized domains).",
-  "auth/operation-not-allowed": "Přihlášení e-mailem není ve Firebase zapnuté (Authentication → Sign-in method).",
-};
-
 export default function OrganizerGate({ label, title, children }) {
   const [user, setUser] = useState(undefined); // undefined = zjišťuje se
   const [email, setEmail] = useState("");
@@ -29,8 +19,8 @@ export default function OrganizerGate({ label, title, children }) {
   const submit = async (e) => {
     e.preventDefault();
     setErr(""); setBusy(true);
-    try { await signInWithEmailAndPassword(auth, email.trim(), pw); setPw(""); }
-    catch (x) { setErr(ERR[x.code] || "Přihlášení se nepovedlo. (" + (x.code || x.message) + ")"); }
+    try { await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), pw); setPw(""); }
+    catch (x) { setErr(authMsg(x)); }
     finally { setBusy(false); }
   };
 
@@ -38,7 +28,7 @@ export default function OrganizerGate({ label, title, children }) {
     setErr(""); setInfo("");
     if (!email.trim()) { setErr("Napište nahoře e-mail a klikněte znovu."); return; }
     try { await sendPasswordResetEmail(auth, email.trim()); setInfo("Poslali jsme e-mail s odkazem na nové heslo (zkontrolujte i spam)."); }
-    catch (x) { setErr(ERR[x.code] || "Odeslání se nepovedlo. (" + (x.code || x.message) + ")"); }
+    catch (x) { setErr(authMsg(x)); }
   };
 
   if (user === undefined) return <section className="block"><div className="wrap"><p style={{ color: "#6b6153" }}>Chvilku…</p></div></section>;

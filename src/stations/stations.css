@@ -171,7 +171,7 @@
 .fo2-flash{ position:absolute; left:34%; top:30%; width:44%; aspect-ratio:1; border-radius:50%; z-index:1; pointer-events:none; opacity:0;
   background:radial-gradient(circle, rgba(255,214,140,.55), rgba(255,214,140,0) 65%); animation:fo2-flash .9s calc(6.2s + var(--o)) ease-out; }
 @keyframes fo2-flash{ 0%{ opacity:0; scale:.5; } 30%{ opacity:1; } 100%{ opacity:0; scale:1.5; } }
-@media (max-width:719px){ .fo2 .fo2-ink, .fo2 .fo2-books{ display:none; } .fo2{ width:96vw; } .fo2-folder{ left:6%; width:88%; top:22%; } .fo2-doc{ width:70%; left:15%; } .fo2-stamp{ width:44%; left:40%; top:50%; } }
+@media (max-width:719px){ .fo2{ width:96vw; } .fo2-folder{ left:6%; width:88%; top:22%; } .fo2-doc{ width:70%; left:15%; } .fo2-stamp{ width:44%; left:40%; top:50%; } }
 
 
 /* ===== Nápovědy u stanoviště ===== */

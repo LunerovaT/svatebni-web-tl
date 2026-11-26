@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { DATES } from "../public/venue.js";
 import { DocThumb } from "./DocViewer.jsx";
 import { SUSPECTS } from "../story/suspects.js";
+import { SUSPECT_MOTIVES } from "../story/suspectMotives.js";
 import { MOTIVES, SOLUTION, POINTS, REVEAL } from "../story/final.js";
 import { sha256Hex } from "../stations/answer.js";
 import { STATIONS } from "../stations/stations.js";
@@ -20,16 +20,7 @@ function timeAgo(ms) {
   return d === 1 ? "včera" : `před ${d} dny`;
 }
 
-// ---------- odpočet do svatby ----------
-const WEDDING = new Date(DATES.start);
-export function weddingCountdown(now = new Date()) {
-  const days = Math.ceil((WEDDING - now) / 86400000);
-  if (days > 4) return `Do svatby zbývá ${days} dní`;
-  if (days > 1) return `Do svatby zbývají ${days} dny`;
-  if (days === 1) return "Svatba je zítra";
-  if (days === 0) return "Svatba je dnes";
-  return null;
-}
+export { weddingCountdown } from "../countdown.js";
 
 // ---------- detail důkazu (modální okno) ----------
 function EvidenceModal({ item, onClose }) {
@@ -165,7 +156,7 @@ export function SuspectsBoard({ evidence }) {
       <div className="case-card">
         <p className="g-kicker">Co zatím víme</p>
         <p style={{ margin: "0 0 14px" }}>
-          Eleanor Whitmoreová zemřela ráno po večeru, kdy z jejího trezoru zmizela nová závěť. Ve 23:17 se z pracovny ozval výkřik.
+          Eleanor Whitmoreová zemřela v noci ve své pracovně. Ve 23:17 se odtud ozval výkřik.
           V sídle tu noc bylo pět lidí a každý z nich měl důvod něco zatajit.
         </p>
         {found.length > 0 ? (
@@ -182,7 +173,7 @@ export function SuspectsBoard({ evidence }) {
               <p className="g-kicker">{s.relation}</p>
               <h3 className="g-suspect-name">{s.name}</h3>
               <p className="g-suspect-about">{s.about}</p>
-              <p className="g-suspect-motive">Možný motiv: <em>{s.motive}</em></p>
+              <p className="g-suspect-motive">Možný motiv: <em>{SUSPECT_MOTIVES[s.id]}</em></p>
               {(pins[s.id] || []).map((p, i) => <p key={i} className="g-pin">Důkaz {p.number}: {p.text}</p>)}
             </div>
           </article>

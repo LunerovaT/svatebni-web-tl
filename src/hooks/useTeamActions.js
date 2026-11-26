@@ -1,12 +1,11 @@
-import { useMemo } from "react";
 import { deleteField, doc, runTransaction, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "../firebase.js";
 import { reportError } from "../reportError.js";
-import { STATIONS } from "../stations/stations.js";
-import { collectEvidence } from "../story/evidence.js";
+import { homeTaskKey } from "../hometask/HomeTask.jsx";
+import { STATION_COUNT } from "../stations/meta.js";
 
 // Zápisy hráče a týmu (domácí úkol, stanoviště, nápovědy, obvinění) a akce testovacího panelu.
-export default function useTeamActions({ myPlayer, myPlayerId, myTeam, teamMembers }) {
+export default function useTeamActions({ myPlayer, myPlayerId, myTeam }) {
   const solveHomeClue = async (stats) => {
     if (!myPlayerId) return;
     // stats z domácí minihry (nápovědy, chybně určené doklady, pokusy) – hodí se pro ladění obtížnosti
@@ -42,7 +41,6 @@ export default function useTeamActions({ myPlayer, myPlayerId, myTeam, teamMembe
       tx.update(ref, upd);
     });
   };
-  const evidence = useMemo(() => collectEvidence({ team: myTeam, members: teamMembers, player: myPlayer }), [myTeam, teamMembers, myPlayer]);
 
   // finální obvinění – zapečetí se jen jednou
   const sealAccusation = async ({ suspect, motive, evidence: ev }) => {
@@ -61,13 +59,13 @@ export default function useTeamActions({ myPlayer, myPlayerId, myTeam, teamMembe
     },
     onSolveAllStations: async () => {
       const upd = {};
-      STATIONS.forEach((_, i) => {
+      Array.from({ length: STATION_COUNT }).forEach((_, i) => {
         if (!myTeam?.stationsDone?.[i]) { upd[`stationsDone.${i}`] = true; upd[`stationsSolvedAt.${i}`] = serverTimestamp(); upd[`stationsSolvedBy.${i}`] = myPlayer?.name || null; }
       });
       if (Object.keys(upd).length) await updateDoc(doc(db, "teams", myTeam.id), upd);
     },
     onResetHomeTask: async () => {
-      try { localStorage.removeItem("wedding_hometask_v2"); } catch { /* ignore */ }
+      try { localStorage.removeItem(homeTaskKey(myPlayerId)); localStorage.removeItem(homeTaskKey(null)); } catch { /* ignore */ }
       if (myPlayerId) await updateDoc(doc(db, "players", myPlayerId), { homeClueSolved: false, homeTask: deleteField(), homeTaskResetAt: serverTimestamp() });
       else window.location.reload();
     },
@@ -79,5 +77,5 @@ export default function useTeamActions({ myPlayer, myPlayerId, myTeam, teamMembe
     },
   };
 
-  return { solveHomeClue, completeStation, openHint, sealAccusation, evidence, testActions };
+  return { solveHomeClue, completeStation, openHint, sealAccusation, testActions };
 }

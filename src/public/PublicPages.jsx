@@ -6,7 +6,7 @@ import dressPhoto3 from "../assets/dresscode3.webp";
 import dressPhoto4 from "../assets/dresscode4.webp";
 import corner from "../assets/corner.webp";
 import { VENUE, DATES } from "./venue.js";
-import { weddingCountdown } from "../game/CaseParts.jsx";
+import { weddingCountdown } from "../countdown.js";
 
 const Soon = ({ children = "Doplníme brzy" }) => <span className="pb-soon">{children}</span>;
 
@@ -64,7 +64,7 @@ function DressSection() {
   );
 }
 
-export function HomePage({ go, choosePath, chosenPath, rsvpDone }) {
+export function HomePage({ go, rsvpDone }) {
   const countdown = weddingCountdown();
   return (
     <>
