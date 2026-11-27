@@ -114,7 +114,7 @@ export function HomePage({ go, rsvpDone }) {
           <div className="pb-food">
             <div className="pb-food-c">
               <h3>Sobota</h3>
-              <p>O jídlo je postaráno. Pro všechny hosty bude připravený společný oběd a večer bohatý raut. Mezi obědem a rautem další společné jídlo plánované není.</p>
+              <p>O jídlo je postaráno. Pro všechny hosty bude připravený společný oběd a večer bohatý raut. Mezi obědem a rautem bude k dispozici také drobné pohoštění.</p>
             </div>
             <div className="pb-food-c">
               <h3>Pití</h3>
@@ -143,7 +143,7 @@ const FAQ = [
     "Kvůli kapacitě jsme i děti zohlednili v počtu hostů uvedeném u pozvánky. Pokud byste potřebovali cokoli změnit, dejte nám vědět."]],
   ["Jak to bude s jídlem?", [
     "Pátek: Na páteční odpoledne a večer nezajišťujeme společné stravování. Pokud dorazíte už v pátek, vezměte si prosím vlastní jídlo podle toho, na co budete mít chuť.",
-    "Sobota: O jídlo už bude postaráno! Pro všechny hosty bude připravený společný oběd a večer bohatý raut. Přes den mezi obědem a rautem není plánované další společné jídlo."]],
+    "Sobota: O jídlo už bude postaráno! Pro všechny hosty bude připravený společný oběd a večer bohatý raut. Mezi obědem a rautem bude k dispozici také drobné pohoštění."]],
   ["Co pití a alkohol?", [
     "Na místě bude pivo ze sudu a nealko. Tvrdý alkohol bude v omezeném množství, určitě vás nezvládneme opít všechny.",
     { b: "Takže můžu si přivézt vlastní tvrdý alkohol?" },
